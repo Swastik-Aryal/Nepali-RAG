@@ -5,8 +5,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from ingestion.models import PageResult
-from ingestion.pdf_parser import extract_digital_text
-from ingestion.ocr_parser import ocr_pages
+from ingestion.ocr_parser import ocr_all_pages
 from ingestion.doc_parser import (
     load_docx,
     load_pptx,
@@ -54,9 +53,8 @@ def load_document(file_path: str) -> list[PageResult]:
 
     Supported formats: PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, RTF, HTML, EPUB, ODT.
 
-    For PDFs, first attempts digital text extraction via PyMuPDF. For any page
-    where digital extraction yields no text (scanned page), falls back to
-    Tesseract OCR at 300 DPI with Nepali language support.
+    For PDFs, every page is rendered to a 300 DPI image and processed through
+    Tesseract OCR with Nepali language support.
 
     For other formats, uses the appropriate parser library to extract text.
     """
@@ -79,27 +77,12 @@ def load_document(file_path: str) -> list[PageResult]:
 
 
 def _load_pdf(file_path: str) -> list[PageResult]:
-    """Load a PDF with digital extraction and OCR fallback."""
-    digital_results = extract_digital_text(file_path)
+    """Load a PDF using Tesseract OCR on all pages.
 
-    pages_needing_ocr = [
-        r.page_number for r in digital_results if not r.text
-    ]
-
-    if not pages_needing_ocr:
-        return digital_results
-
-    ocr_results = ocr_pages(file_path, pages_needing_ocr)
-    ocr_map = {r.page_number: r for r in ocr_results}
-
-    final_results = []
-    for page_result in digital_results:
-        if not page_result.text and page_result.page_number in ocr_map:
-            final_results.append(ocr_map[page_result.page_number])
-        else:
-            final_results.append(page_result)
-
-    return final_results
+    Every page is rendered to a 300 DPI image and processed through
+    Tesseract OCR, regardless of whether it contains digital text.
+    """
+    return ocr_all_pages(file_path)
 
 
 def _load_txt(file_path: str) -> list[PageResult]:
@@ -117,7 +100,7 @@ def _load_txt(file_path: str) -> list[PageResult]:
 
 def main():
     """Load a document and write each page result to a JSON file in ingestion/tests/."""
-    file_path = "data/sample_docs/test.pdf"
+    file_path = "data/sample_docs/test1.pdf"
     results = load_document(file_path)
 
     # Resolve tests directory relative to this file (ingestion/tests/)

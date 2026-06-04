@@ -39,10 +39,10 @@ def ocr_page(file_path: str, page_number: int) -> PageResult:
     )
 
 
-def ocr_pages(file_path: str, page_numbers: list[int]) -> list[PageResult]:
-    """Run OCR on multiple pages of a PDF.
+def ocr_all_pages(file_path: str) -> list[PageResult]:
+    """Run Tesseract OCR on every page of a PDF at 300 DPI.
 
-    page_numbers is a list of 1-indexed page numbers.
+    Returns a list of PageResult with extraction_method="ocr" for all pages.
     """
     file_path = str(Path(file_path).resolve())
     results = []
@@ -51,8 +51,8 @@ def ocr_pages(file_path: str, page_numbers: list[int]) -> list[PageResult]:
     try:
         mat = fitz.Matrix(300 / 72, 300 / 72)
 
-        for page_num in page_numbers:
-            page = doc[page_num - 1]
+        for page_num in range(len(doc)):
+            page = doc[page_num]
             pix = page.get_pixmap(matrix=mat)
 
             img_bytes = pix.tobytes("png")
@@ -64,7 +64,7 @@ def ocr_pages(file_path: str, page_numbers: list[int]) -> list[PageResult]:
             )
 
             results.append(PageResult(
-                page_number=page_num,
+                page_number=page_num + 1,
                 text=text.strip() if text else "",
                 source=file_path,
                 extraction_method="ocr"

@@ -6,39 +6,38 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ingestion.loader import load_document
-from ingestion.pdf_parser import extract_digital_text
-from ingestion.ocr_parser import ocr_page
+from ingestion.ocr_parser import ocr_all_pages
 from ingestion.models import PageResult
 
 
-def test_pdf_digital_extraction():
-    """Test digital text extraction from a PDF."""
+def test_pdf_ocr_extraction():
+    """Test OCR text extraction from all pages of a PDF."""
     test_pdf = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "test.pdf"
+        os.path.dirname(os.path.dirname(__file__)), "data","sample_docs","test.pdf"
     )
     if not os.path.exists(test_pdf):
         print(f"[SKIP] test.pdf not found at {test_pdf}")
         return
 
-    results = extract_digital_text(test_pdf)
+    results = ocr_all_pages(test_pdf)
 
-    print(f"\nDigital extraction results:")
+    print(f"\nOCR extraction results:")
     print(f"  Pages extracted: {len(results)}")
 
     for r in results:
         assert isinstance(r, PageResult)
-        assert r.extraction_method == "digital"
+        assert r.extraction_method == "ocr"
         assert r.page_number >= 1
         text_preview = r.text[:100] if r.text else "(empty)"
         print(f"  Page {r.page_number}: {len(r.text)} chars | {text_preview}...")
 
-    print("[PASS] PDF digital extraction")
+    print("[PASS] PDF OCR extraction")
 
 
 def test_load_document_pdf():
-    """Test the unified loader with PDF (digital + OCR fallback)."""
+    """Test the unified loader with PDF (OCR for all pages)."""
     test_pdf = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "test.pdf"
+        os.path.dirname(os.path.dirname(__file__)), "data","sample_docs","test1.pdf"
     )
     if not os.path.exists(test_pdf):
         print(f"[SKIP] test.pdf not found at {test_pdf}")
@@ -53,6 +52,7 @@ def test_load_document_pdf():
         assert isinstance(r, PageResult)
         assert r.page_number >= 1
         assert r.source
+        assert r.extraction_method == "ocr"
         has_text = bool(r.text)
         print(
             f"  Page {r.page_number}: method={r.extraction_method} | "
@@ -61,11 +61,7 @@ def test_load_document_pdf():
 
     pages_with_text = sum(1 for r in results if r.text)
     print(f"  Pages with text: {pages_with_text}/{len(results)}")
-
-    ocr_pages_list = [r for r in results if r.extraction_method == "ocr"]
-    digital_pages = [r for r in results if r.extraction_method == "digital"]
-    print(f"  Digital pages: {len(digital_pages)}")
-    print(f"  OCR pages: {len(ocr_pages_list)}")
+    print(f"  All pages processed via OCR: {len(results)}")
     print("[PASS] Unified loader PDF")
 
 
@@ -97,12 +93,12 @@ def test_page_result_metadata():
         page_number=1,
         text="test text",
         source="/path/to/file.pdf",
-        extraction_method="digital"
+        extraction_method="ocr"
     )
     assert pr.page_number == 1
     assert pr.text == "test text"
     assert pr.source == "/path/to/file.pdf"
-    assert pr.extraction_method == "digital"
+    assert pr.extraction_method == "ocr"
     print("\n[PASS] PageResult metadata")
 
 
@@ -121,13 +117,7 @@ def test_load_docx():
 
     test_dir = os.path.dirname(os.path.dirname(__file__))
     test_docx = os.path.join(test_dir, "data", "sample_docs", "test.docx")
-    os.makedirs(os.path.dirname(test_docx), exist_ok=True)
-
-    doc = Document()
-    doc.add_paragraph("नेपाल एक सुन्दर देश हो।")
-    doc.add_paragraph("यो हिमालयको देश हो।")
-    doc.save(test_docx)
-
+    
     results = load_document(test_docx)
     assert len(results) == 1
     assert results[0].extraction_method == "docx"
@@ -229,7 +219,7 @@ if __name__ == "__main__":
     test_load_csv()
     test_load_html()
     test_load_md()
-    test_pdf_digital_extraction()
+    test_pdf_ocr_extraction()
     test_load_document_pdf()
 
     print("All ingestion tests completed.")
