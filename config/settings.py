@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 class Settings(BaseSettings):
-    qdrant_host: str = "localhost"
-    qdrant_port: int = 6333
+    qdrant_url: str = ""
+    qdrant_api_key: str = ""
     collection_name: str = "nepali_docs"
 
     embedding_model: str = "intfloat/multilingual-e5-large"

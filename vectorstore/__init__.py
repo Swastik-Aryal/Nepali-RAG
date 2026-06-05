@@ -1,1 +1,1 @@
-# vectorstore package
+from vectorstore.qdrant_store import QdrantStore
