@@ -1,1 +1,1 @@
-# chunking package
+from chunking.splitter import chunk_pages
