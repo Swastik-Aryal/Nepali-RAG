@@ -175,7 +175,7 @@ def chunk_pages(
     min_tokens = chunk_size // 2
 
     splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n", " "],
+        separators=["\n\n", "।", "॥", "!", "?", ".", " "],
         chunk_size=chunk_size,
         chunk_overlap=0,
         length_function=_count_tokens,
