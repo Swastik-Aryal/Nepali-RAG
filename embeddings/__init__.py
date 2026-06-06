@@ -1,1 +1,0 @@
-from embeddings.embedding_model import NepaliEmbeddingModel

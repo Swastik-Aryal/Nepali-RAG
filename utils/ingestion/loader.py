@@ -1,0 +1,120 @@
+import json
+import sys
+import os
+from dataclasses import asdict
+from pathlib import Path
+
+from utils.ingestion.models import PageResult
+from utils.ingestion.ocr_parser import ocr_all_pages
+from utils.ingestion.doc_parser import (
+    load_docx,
+    load_pptx,
+    load_xlsx,
+    load_csv_file,
+    load_rtf,
+    load_html,
+    load_epub,
+    load_odt,
+)
+
+SUPPORTED_FORMATS = {
+    ".pdf": "PDF documents",
+    ".txt": "Plain text files",
+    ".md": "Markdown files",
+    ".docx": "Microsoft Word documents",
+    ".pptx": "Microsoft PowerPoint presentations",
+    ".xlsx": "Microsoft Excel spreadsheets",
+    ".csv": "CSV files",
+    ".rtf": "Rich Text Format files",
+    ".html": "HTML files",
+    ".htm": "HTML files",
+    ".epub": "EPUB ebooks",
+    ".odt": "OpenDocument Text files",
+}
+
+FORMAT_HANDLERS = {
+    ".pdf": "_load_pdf",
+    ".txt": "_load_txt",
+    ".md": "_load_txt",
+    ".docx": load_docx,
+    ".pptx": load_pptx,
+    ".xlsx": load_xlsx,
+    ".csv": load_csv_file,
+    ".rtf": load_rtf,
+    ".html": load_html,
+    ".htm": load_html,
+    ".epub": load_epub,
+    ".odt": load_odt,
+}
+
+
+def load_document(file_path: str) -> list[PageResult]:
+    """Load a document and extract text from all pages.
+
+    Supported formats: PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, RTF, HTML, EPUB, ODT.
+
+    For PDFs, every page is rendered to a 300 DPI image and processed through
+    Tesseract OCR with Nepali language support.
+
+    For other formats, uses the appropriate parser library to extract text.
+    """
+    path = Path(file_path).resolve()
+    suffix = path.suffix.lower()
+
+    if suffix not in SUPPORTED_FORMATS:
+        supported = ", ".join(sorted(SUPPORTED_FORMATS.keys()))
+        raise ValueError(
+            f"Unsupported file format: {suffix}. Supported: {supported}"
+        )
+
+    if suffix == ".pdf":
+        return _load_pdf(str(path))
+    elif suffix in (".txt", ".md"):
+        return _load_txt(str(path))
+    else:
+        handler = FORMAT_HANDLERS[suffix]
+        return handler(str(path))
+
+
+def _load_pdf(file_path: str) -> list[PageResult]:
+    """Load a PDF using Tesseract OCR on all pages.
+
+    Every page is rendered to a 300 DPI image and processed through
+    Tesseract OCR, regardless of whether it contains digital text.
+    """
+    return ocr_all_pages(file_path)
+
+
+def _load_txt(file_path: str) -> list[PageResult]:
+    """Load a plain text or markdown file as a single page."""
+    path = Path(file_path)
+    text = path.read_text(encoding="utf-8")
+
+    return [PageResult(
+        page_number=1,
+        text=text.strip(),
+        source=str(path),
+        extraction_method="text_file"
+    )]
+
+
+def main():
+    """Load a document and write each page result to a JSON file in ingestion/tests/."""
+    file_path = "data/sample_docs/test.pdf"
+    results = load_document(file_path)
+
+    # Resolve tests directory relative to this file (ingestion/tests/)
+    tests_dir = Path(__file__).resolve().parent / "tests"
+    tests_dir.mkdir(parents=True, exist_ok=True)
+
+    for page_result in results:
+        output_file = tests_dir / f"page_{page_result.page_number}.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(asdict(page_result), f, ensure_ascii=False, indent=2)
+        print(f"Wrote {output_file}")
+
+    print(f"\nDone. {len(results)} page(s) written to {tests_dir}")
+
+
+if __name__ == "__main__":
+    main()
