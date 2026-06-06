@@ -100,7 +100,7 @@ def _load_txt(file_path: str) -> list[PageResult]:
 
 def main():
     """Load a document and write each page result to a JSON file in ingestion/tests/."""
-    file_path = "data/sample_docs/test1.pdf"
+    file_path = "data/sample_docs/test.pdf"
     results = load_document(file_path)
 
     # Resolve tests directory relative to this file (ingestion/tests/)
