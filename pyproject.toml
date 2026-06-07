@@ -1,0 +1,121 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nepali-rag"
+version = "1.0.0"
+description = "Retrieval-Augmented Generation system with deep Nepali language support"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Swastik Aryal"},
+]
+keywords = [
+    "nepali",
+    "rag",
+    "retrieval-augmented-generation",
+    "nlp",
+    "devanagari",
+    "ocr",
+    "langchain",
+    "qdrant",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+dependencies = [
+    # Document parsing
+    "PyMuPDF>=1.24.0",
+    "pytesseract>=0.3.10",
+    "Pillow>=10.0.0",
+    "python-docx>=1.1.0",
+    "python-pptx>=0.6.23",
+    "openpyxl>=3.1.0",
+    "striprtf>=0.0.26",
+    "beautifulsoup4>=4.12.0",
+    "EbookLib>=0.18",
+    "odfpy>=1.4.0",
+
+    # Configuration
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+
+    # LangChain core
+    "langchain>=0.2.0",
+    "langchain-community>=0.2.0",
+    "langchain-core>=0.2.0",
+
+    # Embeddings and reranking
+    "sentence-transformers>=3.0.0",
+    "transformers>=4.40.0",
+    "torch>=2.0.0",
+
+    # Vector store
+    "qdrant-client>=1.9.0",
+]
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.29.0",
+    "python-multipart>=0.0.9",
+]
+openai = [
+    "openai>=1.0.0",
+]
+gemini = [
+    "langchain-google-genai>=2.0.0",
+]
+ollama = [
+    "langchain-ollama>=0.3.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+all = [
+    "nepali-rag[api,openai,gemini,ollama,dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/Swastik-Aryal/Nepali-RAG"
+Repository = "https://github.com/Swastik-Aryal/Nepali-RAG"
+Issues = "https://github.com/Swastik-Aryal/Nepali-RAG/issues"
+
+[project.scripts]
+nepali-rag = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+
+[tool.setuptools.packages.find]
+include = ["api*", "utils*"]
+exclude = ["utils.tests*", "utils.data*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.txt", "*.md"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["utils/tests"]
+pythonpath = ["."]
