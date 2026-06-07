@@ -20,5 +20,4 @@ def get_ollama_llm(**kwargs) -> BaseChatModel:
         model=kwargs.get("model", settings.llm_model),
         base_url=kwargs.get("base_url", settings.ollama_base_url),
         temperature=kwargs.get("temperature", settings.llm_temperature),
-        num_predict=kwargs.get("max_tokens", settings.llm_max_tokens),
     )

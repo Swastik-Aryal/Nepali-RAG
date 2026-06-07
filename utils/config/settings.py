@@ -29,7 +29,6 @@ class Settings(BaseSettings):
     sparse_weight: float = 0.3
 
     llm_temperature: float = 0.3
-    llm_max_tokens: int = 1024
 
     data_dir: Path = Path("data")
     sample_docs_dir: Path = Path("data/sample_docs")

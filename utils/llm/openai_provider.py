@@ -19,5 +19,4 @@ def get_openai_llm(**kwargs) -> BaseChatModel:
         model=kwargs.get("model", settings.llm_model),
         openai_api_key=api_key,
         temperature=kwargs.get("temperature", settings.llm_temperature),
-        max_tokens=kwargs.get("max_tokens", settings.llm_max_tokens),
     )

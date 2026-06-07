@@ -27,5 +27,4 @@ def get_gemini_llm(**kwargs) -> BaseChatModel:
         model=kwargs.get("model", settings.llm_model),
         google_api_key=api_key,
         temperature=kwargs.get("temperature", settings.llm_temperature),
-        max_output_tokens=kwargs.get("max_tokens", settings.llm_max_tokens),
     )

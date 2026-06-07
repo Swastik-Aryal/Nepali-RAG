@@ -21,7 +21,7 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
         provider: one of "vllm", "openai", "gemini", "ollama". Falls back to the
             LLM_PROVIDER setting if not specified.
         **kwargs: forwarded to the provider constructor. Common keys:
-            model, temperature, max_tokens, api_key, base_url.
+            model, temperature, api_key, base_url.
 
     Returns:
         A configured BaseChatModel instance.

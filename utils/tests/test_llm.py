@@ -32,7 +32,6 @@ def test_factory_vllm_custom_params():
         provider="vllm",
         model="custom/model",
         temperature=0.5,
-        max_tokens=512,
         base_url="http://localhost:9999/v1",
     )
     assert isinstance(llm, BaseChatModel)
