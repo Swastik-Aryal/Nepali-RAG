@@ -11,11 +11,14 @@ class Settings(BaseSettings):
     reranker_model: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
 
     llm_provider: str = "vllm"
-    llm_model: str = "google/gemma-3-4b-it"
+    vllm_model: str = "google/gemma-3-4b-it"
     vllm_base_url: str = "http://localhost:8000/v1"
     openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
     google_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
     ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "gemma3:4b"
 
     tesseract_languages: str = "nep+eng"
 

@@ -16,7 +16,7 @@ def get_openai_llm(**kwargs) -> BaseChatModel:
         )
 
     return ChatOpenAI(
-        model=kwargs.get("model", settings.llm_model),
+        model=kwargs.get("model", settings.openai_model),
         openai_api_key=api_key,
         temperature=kwargs.get("temperature", settings.llm_temperature),
     )

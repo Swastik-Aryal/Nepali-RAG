@@ -10,7 +10,7 @@ def get_vllm_llm(**kwargs) -> BaseChatModel:
     directly when pointed at the local server. No API key is required.
     """
     return ChatOpenAI(
-        model=kwargs.get("model", settings.llm_model),
+        model=kwargs.get("model", settings.vllm_model),
         openai_api_base=kwargs.get("base_url", settings.vllm_base_url),
         openai_api_key=kwargs.get("api_key", "not-needed"),
         temperature=kwargs.get("temperature", settings.llm_temperature),

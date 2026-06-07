@@ -17,7 +17,7 @@ def get_ollama_llm(**kwargs) -> BaseChatModel:
         )
 
     return ChatOllama(
-        model=kwargs.get("model", settings.llm_model),
+        model=kwargs.get("model", settings.ollama_model),
         base_url=kwargs.get("base_url", settings.ollama_base_url),
         temperature=kwargs.get("temperature", settings.llm_temperature),
     )

@@ -24,7 +24,7 @@ def get_gemini_llm(**kwargs) -> BaseChatModel:
         )
 
     return ChatGoogleGenerativeAI(
-        model=kwargs.get("model", settings.llm_model),
+        model=kwargs.get("model", settings.gemini_model),
         google_api_key=api_key,
         temperature=kwargs.get("temperature", settings.llm_temperature),
     )
