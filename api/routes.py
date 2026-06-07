@@ -5,7 +5,7 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 
 from api.schemas import (
     CollectionInfo,
@@ -45,6 +45,7 @@ def _save_conversation(conversation_id: str, history: list[dict]) -> None:
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_documents(
+    request: Request,
     files: list[UploadFile] = File(...),
     collection_name: str | None = Form(default=None),
     chunk_size: int | None = Form(default=None),
@@ -81,6 +82,7 @@ async def upload_documents(
             saved_paths.append(dest)
 
         pipeline = DocumentPipeline(
+            embedding_model=request.app.state.embedding_model,
             collection_name=collection_name,
             chunk_size=chunk_size,
             chunk_overlap_sentences=chunk_overlap_sentences,
@@ -112,7 +114,7 @@ async def upload_documents(
 
 
 @router.post("/query", response_model=QueryResponse)
-async def query_documents(request: QueryRequest):
+async def query_documents(request: Request, body: QueryRequest):
     """Query the RAG pipeline with a question and optional conversation history.
 
     Conversation persistence: each query is tied to a conversation_id. If not
@@ -126,31 +128,38 @@ async def query_documents(request: QueryRequest):
     from utils.rag.chain import RAGChain
     from utils.llm.base import get_llm
 
-    question = request.question.strip()
+    question = body.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Question must not be empty.")
 
-    conversation_id = request.conversation_id or uuid.uuid4().hex[:16]
-    collection = request.collection_name or settings.collection_name
+    conversation_id = body.conversation_id or uuid.uuid4().hex[:16]
+    collection = body.collection_name or settings.collection_name
 
-    if request.conversation_history:
-        history = [{"role": t.role, "content": t.content} for t in request.conversation_history]
+    if body.conversation_history:
+        history = [{"role": t.role, "content": t.content} for t in body.conversation_history]
     else:
         history = _load_conversation(conversation_id)
 
     try:
         store = QdrantStore(collection_name=collection)
-        retriever = Retriever(store=store)
+        retriever = Retriever(
+            embedding_model=request.app.state.embedding_model,
+            store=store,
+            reranker=request.app.state.reranker,
+        )
+
+        # Resolve use_tools: per-request override > global setting.
+        use_tools = body.use_tools if body.use_tools is not None else settings.use_tools
 
         llm = None
         try:
             llm_kwargs = {}
-            if request.llm_provider:
-                llm_kwargs["provider"] = request.llm_provider
-            if request.llm_model:
-                llm_kwargs["model"] = request.llm_model
-            if request.temperature is not None:
-                llm_kwargs["temperature"] = request.temperature
+            if body.llm_provider:
+                llm_kwargs["provider"] = body.llm_provider
+            if body.llm_model:
+                llm_kwargs["model"] = body.llm_model
+            if body.temperature is not None:
+                llm_kwargs["temperature"] = body.temperature
             llm = get_llm(**llm_kwargs)
         except (ConnectionError, OSError, TimeoutError) as exc:
             logger.warning("LLM unavailable (%s), operating in test mode", exc)
@@ -161,14 +170,14 @@ async def query_documents(request: QueryRequest):
                 detail=f"LLM initialization failed: {exc}",
             )
 
-        chain = RAGChain(retriever=retriever, llm=llm)
+        chain = RAGChain(retriever=retriever, llm=llm, use_tools=use_tools)
 
         try:
             result = chain.run(
                 question=question,
                 conversation_history=history or None,
-                top_k_retrieval=request.top_k_retrieval,
-                top_k_rerank=request.top_k_rerank,
+                top_k_retrieval=body.top_k_retrieval,
+                top_k_rerank=body.top_k_rerank,
             )
         except Exception as llm_exc:
             # If the LLM was set but failed at invocation time (e.g. connection
@@ -179,12 +188,12 @@ async def query_documents(request: QueryRequest):
                     llm_exc,
                 )
                 llm = None
-                chain = RAGChain(retriever=retriever, llm=None)
+                chain = RAGChain(retriever=retriever, llm=None, use_tools=False)
                 result = chain.run(
                     question=question,
                     conversation_history=history or None,
-                    top_k_retrieval=request.top_k_retrieval,
-                    top_k_rerank=request.top_k_rerank,
+                    top_k_retrieval=body.top_k_retrieval,
+                    top_k_rerank=body.top_k_rerank,
                 )
             else:
                 raise
@@ -215,6 +224,7 @@ async def query_documents(request: QueryRequest):
         collection_name=collection,
         conversation_id=conversation_id,
         test_mode=llm is None,
+        used_tool_calling=result.get("tool_called", False),
     )
 
 

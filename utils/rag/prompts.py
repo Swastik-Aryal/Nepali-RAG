@@ -11,6 +11,53 @@ SYSTEM_PROMPT = (
 
 )
 
+TOOL_CALLING_SYSTEM_PROMPT = (
+    "You are a helpful assistant with access to a document knowledge base.\n\n"
+    "You have a tool called ``retrieve_documents`` that searches the knowledge base "
+    "for relevant information. Use it wisely:\n\n"
+    "**CALL the tool** when the user asks a question that likely requires information "
+    "from the knowledge base — factual questions, specific details, references, etc.\n\n"
+    "**DO NOT call the tool** when:\n"
+    "- The user is asking for a translation, rephrasing, or summary of something "
+    "already discussed in the conversation.\n"
+    "- The user is making small talk, greeting, or thanking you.\n"
+    "- The user is asking a follow-up that can be answered from the conversation "
+    "history alone (e.g. 'Can you tell me that in English?').\n"
+    "- You are confident you can answer from general knowledge or prior conversation.\n\n"
+    "When you DO use retrieved context, cite relevant chunks by their numbers "
+    "(e.g. [1], [2]).\n\n"
+    "Answer in the same language the user is writing in unless they explicitly "
+    "request a specific language."
+)
+
+# LangChain-compatible tool definition for retrieve_documents.
+# This dict is passed to llm.bind_tools() and works uniformly across
+# OpenAI, Gemini, Ollama, and vLLM providers.
+RETRIEVAL_TOOL_DEFINITION = {
+    "name": "retrieve_documents",
+    "description": (
+        "Search the document knowledge base for relevant information. "
+        "Call this tool when you need factual information, specific details, "
+        "or references from the uploaded documents to answer the user's question. "
+        "Do NOT call this tool for conversational follow-ups, translations, "
+        "or rephrasing of previously discussed content."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": (
+                    "The search query to look up in the knowledge base. "
+                    "Rephrase the user's question into a clear, concise search "
+                    "query optimized for retrieval."
+                ),
+            },
+        },
+        "required": ["query"],
+    },
+}
+
 
 def format_context(retrieved_results: list[dict]) -> str:
     """Format retrieved chunks into a numbered context string for the LLM.

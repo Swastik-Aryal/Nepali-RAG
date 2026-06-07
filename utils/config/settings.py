@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     sparse_weight: float = 0.3
 
     llm_temperature: float = 0.3
+    use_tools: bool = False
 
     data_dir: Path = Path("data")
     sample_docs_dir: Path = Path("data/sample_docs")

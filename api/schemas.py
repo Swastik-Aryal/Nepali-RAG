@@ -31,6 +31,7 @@ class QueryRequest(BaseModel):
     llm_provider: str | None = None
     llm_model: str | None = None
     temperature: float | None = None
+    use_tools: bool | None = None
 
 
 class SourceDocument(BaseModel):
@@ -47,6 +48,7 @@ class QueryResponse(BaseModel):
     collection_name: str
     conversation_id: str
     test_mode: bool
+    used_tool_calling: bool = False
 
 
 class HealthResponse(BaseModel):

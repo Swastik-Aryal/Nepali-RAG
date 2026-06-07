@@ -12,7 +12,21 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Nepali-RAG API")
+
+    # Load heavy ML models once at startup instead of per-request.
+    from utils.embeddings.embedding_model import NepaliEmbeddingModel
+    from utils.retrieval.reranker import Reranker
+
+    logger.info("Loading embedding model...")
+    app.state.embedding_model = NepaliEmbeddingModel()
+    logger.info("Embedding model loaded (dim=%d)", app.state.embedding_model.dimension)
+
+    logger.info("Loading reranker model...")
+    app.state.reranker = Reranker()
+    logger.info("Reranker model loaded")
+
     yield
+
     logger.info("Shutting down Nepali-RAG API")
 
 
