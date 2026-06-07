@@ -1,4 +1,64 @@
-__pycache__
-guide.md
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+sdist/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment and secrets
 .env
-.vscode
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Model caches (large downloads)
+models/
+.cache/
+
+# Data outputs
+data/output/
+data/results/
+*.jsonl
+
+# Qdrant local storage
+qdrant_storage/
+
+# Tesseract temp
+*.tiff
+*.tif
+
+# Logs
+*.log
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Conversations (server-side state)
+api/conversations/*.json
+
+# Project guide (internal reference)
+guide.md
