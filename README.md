@@ -37,13 +37,13 @@ Document Upload
 +------------------+     +------------------+     +------------------------+
 | Query Embedding  | --> | Hybrid Search    | --> | Cross-Encoder          |
 | (e5-large)       |     | (0.8 dense +     |     | Reranking              |
-|                  |     |  0.2 sparse)     |     | (mmarco-mMiniLMv2)    |
+|                  |     |  0.2 sparse)     |     | (mmarco-mMiniLMv2)     |
 +------------------+     +------------------+     +------------------------+
                                                             |
                                                             v
                                                   +------------------------+
                                                   | RAG Chain              |
-                                                  | (LangChain + LLM)     |
+                                                  | (LangChain + LLM)      |
                                                   | Always-retrieve or     |
                                                   | Tool-calling mode      |
                                                   +------------------------+
@@ -58,12 +58,12 @@ Document Upload
 - **Tesseract OCR** with Nepali language data (`nep` trained data)
   - Linux: `sudo apt install tesseract-ocr tesseract-ocr-nep`
   - macOS: `brew install tesseract` then download `nep.traineddata`
-  - Windows: install from [UB Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki) and add Nepali language data
+  - Windows: install from [UB Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki) and add Nepali language data from [here](https://github.com/tesseract-ocr/tessdata/blob/main/nep.traineddata)
 - **Qdrant** vector database instance (local or cloud)
   - Local: `docker run -p 6333:6333 qdrant/qdrant`
   - Cloud: create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io)
 - **LLM backend** (at least one):
-  - Ollama (easiest): `ollama pull gemma3:4b`
+  - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice.
   - vLLM server for OpenAI-compatible API
   - OpenAI API key
   - Google Gemini API key
