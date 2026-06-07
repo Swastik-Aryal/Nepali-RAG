@@ -186,7 +186,7 @@ All settings are managed through environment variables or a `.env` file. See [`.
 | `OLLAMA_BASE_URL`         | `http://localhost:11434`                     | Ollama server endpoint                                   |
 | `OLLAMA_MODEL`            | `gemma3:4b`                                  | Model for Ollama provider                                |
 | `TESSERACT_LANGUAGES`     | `nep+eng`                                    | OCR language configuration                               |
-| `CHUNK_SIZE`              | `512`                                        | Maximum chunk size in tokens                             |
+| `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens // 2                       |
 | `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                          |
 | `TOP_K_RETRIEVAL`         | `20`                                         | Hybrid search candidate count                            |
 | `TOP_K_RERANK`            | `5`                                          | Final reranked result count                              |
@@ -329,7 +329,7 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 
 - **Level 1**: **LangChain's `RecursiveCharacterTextSplitter`** splits on structural separators (`\n\n`, `\n`, ) to keep paragraphs intact. A post-processing pass (`_ensure_sentence_boundaries`) trims every block to end on a sentence delimiter, carrying incomplete fragments forward.
 - **Level 2**: Oversized blocks are split at sentence boundaries with configurable overlap (default: 2 sentences).
-- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model (`intfloat/multilingual-e5-large`) to count tokens accurately. Default chunk size is **512 tokens**.
+- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model (`intfloat/multilingual-e5-large`) to count tokens accurately. Default chunk size is 512(limit) / 2 i.e. **256** **tokens**.
 - Small blocks below half the chunk size are merged with neighbors to avoid tiny fragments.
 
 ---

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     tesseract_languages: str = "nep+eng"
 
-    chunk_size: int = 512
+    chunk_size: int = 256
     chunk_overlap_sentences: int = 2
 
     top_k_retrieval: int = 20
