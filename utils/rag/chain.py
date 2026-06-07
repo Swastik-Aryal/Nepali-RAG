@@ -29,10 +29,17 @@ class RAGChain:
 
         Args:
             question: the user's current question (used for retrieval).
-            conversation_history: optional list of previous turns, each a dict
+            conversation_history: optional list of *previous* turns, each a dict
                 with 'role' ('user' or 'assistant') and 'content' keys.
-                These are prepended to the LLM messages for multi-turn context
-                but are NOT used for retrieval.
+                Do NOT include the current question here; it goes in the
+                ``question`` parameter. These are prepended to the LLM
+                messages for multi-turn context but are NOT used for
+                retrieval. Expected format::
+
+                    [
+                        {"role": "user", "content": "What is the capital of Nepal?"},
+                        {"role": "assistant", "content": "The capital of Nepal is Kathmandu."},
+                    ]
             top_k_retrieval: override for number of hybrid search candidates.
             top_k_rerank: override for number of final reranked results.
 
