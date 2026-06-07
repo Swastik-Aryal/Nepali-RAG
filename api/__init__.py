@@ -1,1 +1,1 @@
-# api package
+from api.main import app
