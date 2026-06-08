@@ -7,6 +7,7 @@ PROVIDERS = {
     "openai": "utils.llm.openai_provider.get_openai_llm",
     "gemini": "utils.llm.gemini_provider.get_gemini_llm",
     "ollama": "utils.llm.ollama_provider.get_ollama_llm",
+    "hf": "utils.llm.hf_provider.get_hf_llm",
 }
 
 
@@ -18,7 +19,7 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
     interact with the standard LangChain chat model interface.
 
     Args:
-        provider: one of "vllm", "openai", "gemini", "ollama". Falls back to the
+        provider: one of "vllm", "hf","openai", "gemini", "ollama". Falls back to the
             LLM_PROVIDER setting if not specified.
         **kwargs: forwarded to the provider constructor. Common keys:
             model, temperature, api_key, base_url.

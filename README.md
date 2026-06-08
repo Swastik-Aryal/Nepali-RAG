@@ -63,7 +63,7 @@ Document Upload
   - Local: `docker run -p 6333:6333 qdrant/qdrant`
   - Cloud: create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io)
 - **LLM backend** (at least one):
-  - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice.
+  - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice (would recommend a model that supports tool-calling)
   - vLLM server for OpenAI-compatible API
   - OpenAI API key
   - Google Gemini API key
@@ -93,7 +93,7 @@ At minimum, set your Qdrant connection and LLM provider:
 ```env
 QDRANT_URL=http://localhost:6333
 LLM_PROVIDER=ollama
-OLLAMA_MODEL=gemma3:4b
+OLLAMA_MODEL=gemma3:4b #or any other model of choice
 ```
 
 ### 2. Ingest a document
@@ -185,6 +185,9 @@ All settings are managed through environment variables or a `.env` file. See [`.
 | `GEMINI_MODEL`            | `gemini-2.5-flash`                           | Model for Gemini provider                                |
 | `OLLAMA_BASE_URL`         | `http://localhost:11434`                     | Ollama server endpoint                                   |
 | `OLLAMA_MODEL`            | `gemma3:4b`                                  | Model for Ollama provider                                |
+| `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                     |
+| `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                          |
+| `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                              |
 | `TESSERACT_LANGUAGES`     | `nep+eng`                                    | OCR language configuration                               |
 | `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens // 2                       |
 | `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                          |
@@ -215,12 +218,13 @@ All settings are managed through environment variables or a `.env` file. See [`.
 
 The system supports four LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable.
 
-| Provider         | Setup                                                   | Notes                                    |
-| ---------------- | ------------------------------------------------------- | ---------------------------------------- |
-| **Ollama** | `ollama pull gemma3:4b`                               | Easiest local option, no API key needed  |
-| **vLLM**   | Start vLLM server with `--model google/gemma-3-4b-it` | OpenAI-compatible API, no API key needed |
-| **OpenAI** | Set `OPENAI_API_KEY`                                  | Direct OpenAI API (GPT-4o, etc.)         |
-| **Gemini** | Set `GOOGLE_API_KEY`                                  | Google Gemini (gemini-2.5-flash, etc.)   |
+| Provider         | Setup                                                   | Notes                                                                          |
+| ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Ollama** | `ollama pull gemma3:4b`                               | Easiest local option, no API key needed                                        |
+| **vLLM**   | Start vLLM server with `--model google/gemma-3-4b-it` | OpenAI-compatible API, no API key needed                                       |
+| **OpenAI** | Set `OPENAI_API_KEY`                                  | Direct OpenAI API (GPT-4o, etc.)                                               |
+| **Gemini** | Set `GOOGLE_API_KEY`                                  | Google Gemini (gemini-2.5-flash, etc.)                                         |
+| **HF**     | Set `hf_token`                                        | Open source models from Hugging-face (choose any repo from the hf models page) |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
 
@@ -390,6 +394,7 @@ A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatM
 | **vLLM**   | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
 | **OpenAI** | `ChatOpenAI`                              | `gpt-4o-mini`          |
 | **Gemini** | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
+| **Hugging Face** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B`     |
 
 All providers expose the same interface — callers use `get_llm()` and never import provider modules directly.
 

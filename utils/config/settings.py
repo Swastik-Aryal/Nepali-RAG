@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     embedding_model: str = "intfloat/multilingual-e5-large"
     reranker_model: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
 
-    llm_provider: str = "vllm"
+    llm_provider: str = "ollama"
     vllm_model: str = "google/gemma-3-4b-it"
     vllm_base_url: str = "http://localhost:8000/v1"
     openai_api_key: str = ""
@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-2.5-flash"
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "gemma3:4b"
+    hf_model_name: str = "Qwen/Qwen3.6-35B-A3B"
+    hf_base_url: str = "https://router.huggingface.co/v1"
+    hf_token: str = "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"
+
 
     tesseract_languages: str = "nep+eng"
 
