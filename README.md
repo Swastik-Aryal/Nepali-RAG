@@ -60,13 +60,15 @@ Document Upload
   - macOS: `brew install tesseract` then download `nep.traineddata`
   - Windows: install from [UB Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki) and add Nepali language data from [here](https://github.com/tesseract-ocr/tessdata/blob/main/nep.traineddata)
 - **Qdrant** vector database instance (local or cloud)
-  - Local: `docker run -p 6333:6333 qdrant/qdrant`
   - Cloud: create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io)
+  - Docker: `docker run -p 6333:6333 qdrant/qdrant`
+  - Local: If you wish, add custom `client` to `qdrant/qdrant_store.py` (Not recommended)
 - **LLM backend** (at least one):
   - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice (would recommend a model that supports tool-calling)
   - vLLM server for OpenAI-compatible API
   - OpenAI API key
   - Google Gemini API key
+  - Hugging-face API key
 
 ## Installation
 
@@ -388,13 +390,13 @@ Connects retrieval to generation with three operating modes:
 
 A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatModel`** for any supported provider. Provider-specific logic is isolated in individual modules:
 
-| Provider         | LangChain Class                             | Default Model            |
-| ---------------- | ------------------------------------------- | ------------------------ |
-| **Ollama** | `ChatOllama`                              | `gemma3:4b`            |
-| **vLLM**   | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
-| **OpenAI** | `ChatOpenAI`                              | `gpt-4o-mini`          |
-| **Gemini** | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
-| **Hugging Face** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B`     |
+| Provider               | LangChain Class                             | Default Model            |
+| ---------------------- | ------------------------------------------- | ------------------------ |
+| **Ollama**       | `ChatOllama`                              | `gemma3:4b`            |
+| **vLLM**         | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
+| **OpenAI**       | `ChatOpenAI`                              | `gpt-4o-mini`          |
+| **Gemini**       | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
+| **Hugging Face** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B` |
 
 All providers expose the same interface — callers use `get_llm()` and never import provider modules directly.
 
