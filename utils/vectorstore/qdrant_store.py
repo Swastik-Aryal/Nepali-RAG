@@ -24,12 +24,15 @@ class QdrantStore:
         collection_name: str = None,
         url: str = None,
         api_key: str = None,
+        client: QdrantClient = None,
     ):
         self.collection_name = collection_name or settings.collection_name
-        url = url or settings.qdrant_url
-        api_key = api_key or settings.qdrant_api_key
-
-        self.client = QdrantClient(url=url, api_key=api_key)
+        if client is not None:
+            self.client = client
+        else:
+            url = url or settings.qdrant_url
+            api_key = api_key or settings.qdrant_api_key
+            self.client = QdrantClient(url=url, api_key=api_key)
         self._ensure_collection()
 
     def _ensure_collection(self):
