@@ -1,6 +1,6 @@
 # Nepali RAG
 
-Retrieval-Augmented Generation system purpose-built for the Nepali language documents, articles, books etc.
+Retrieval Augmented Generation framework purpose-built for the Nepali language documents, articles, books etc.
 
 Plugable into any chatbot, search interface, or LLM wrapper to give your application grounded, citation-backed answers from Nepali documents.
 
@@ -119,6 +119,23 @@ pipeline = DocumentPipeline()
 result = pipeline.ingest("path/to/document.pdf")
 print(result)
 # {'collection_name': 'doc_a1b2c3d4e5f6', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
+
+
+## OR FOR MORE CONTROL
+
+
+from utils.pipeline import DocumentPipeline
+from utils.embeddings import NepaliEmbeddingModel
+from utils.vectorstore import QdrantStore
+from qdrant_client import QdrantClient # Only for custom local clients
+
+embedding_model = NepaliEmbeddingModel()
+local_client = QdrantClient(":memory:") # for custom local client
+qdrant_store = QdrantStore(collection_name = "SOME_COLLECTION_NAME", client = local_client)
+pipeline = DocumentPipeline(embedding_model = embedding_model, vector_store = qdrant_store)
+result = pipeline.ingest("path/to/document.pdf")
+print(result)
+# {'collection_name': 'doc_a1b2c3d4e5f6', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
 ```
 
 ### 3. Query your documents
@@ -131,9 +148,9 @@ nepali-rag query "नेपालको संविधानमा के ल�
   -c my_collection \          # Qdrant collection to search
   --provider ollama \         # LLM provider (vllm, openai, gemini, ollama)
   --model gemma3:4b \         # LLM model name override
-  --top-k 10 \                # number of retrieval candidates
+  --top-k 20 \                # number of retrieval candidates
   --test \                    # run in test mode (no LLM, returns raw prompt)
-  --tools \                   # enable tool-calling mode
+  --disable-tools \           # disable tool-calling mode
   -v                          # enable debug logging
 ```
 
@@ -141,11 +158,40 @@ Or from Python:
 
 ```python
 from utils.retrieval import Retriever
+from utils.vectorstore import QdrantStore
 from utils.rag import RAGChain
 from utils.llm import get_llm
 
-retriever = Retriever(collection_name="doc_a1b2c3d4e5f6")
-llm = get_llm()
+qdrant_store = QdrantStore(collection_name = "EXISTING_COLLECTION_NAME")
+retriever = Retriever(store = qdrant_store)
+llm = get_llm() # defaults to "provider" = "ollama" and "model" = "gemma3:4b"
+chain = RAGChain(retriever=retriever, llm=llm)
+
+result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?")
+print(result["answer"])
+
+
+## OR FOR MORE CONTROL
+
+
+from qdrant_client import QdrantClient # Only for custom local clients
+from utils.vectorstore import QdrantStore
+from utils.embeddings import NepaliEmbeddingModel
+
+from utils.retrieval import Retriever
+from utils.retrieval import Reranker
+
+from utils.rag import RAGChain
+from utils.llm import get_llm
+
+local_client = QdrantClient(":memory:") # for custom local client
+qdrant_store = QdrantStore(collection_name = "EXISTING_COLLECTION_NAME", client = local_client)
+
+embedding_model = NepaliEmbeddingModel()
+reranker = Reranker()
+
+retriever = Retriever(embedding_model = embedding_model, reranker = reranker, store = qdrant_store)
+llm = get_llm(provider = "hf", model = "Qwen/Qwen3.6-35B-A3B") # [api_key] set in the [.env]
 chain = RAGChain(retriever=retriever, llm=llm)
 
 result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?")
@@ -178,7 +224,7 @@ All settings are managed through environment variables or a `.env` file. See [`.
 | `COLLECTION_NAME`         | `nepali_docs`                                | Default Qdrant collection                                |
 | `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                     |
 | `RERANKER_MODEL`          | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Reranker model name                                      |
-| `LLM_PROVIDER`            | `vllm`                                       | LLM backend:`vllm`, `openai`, `gemini`, `ollama` |
+| `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama` |
 | `VLLM_MODEL`              | `google/gemma-3-4b-it`                       | Model for vLLM provider                                  |
 | `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                     |
 | `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key                                           |
@@ -190,7 +236,7 @@ All settings are managed through environment variables or a `.env` file. See [`.
 | `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                     |
 | `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                          |
 | `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                              |
-| `TESSERACT_LANGUAGES`     | `nep+eng`                                    | OCR language configuration                               |
+| `TESSERACT_LANGUAGES`     | `nep`                                        | OCR language configuration                               |
 | `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens // 2                       |
 | `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                          |
 | `TOP_K_RETRIEVAL`         | `20`                                         | Hybrid search candidate count                            |
@@ -198,7 +244,7 @@ All settings are managed through environment variables or a `.env` file. See [`.
 | `DENSE_WEIGHT`            | `0.9`                                        | Dense score weight in hybrid search                      |
 | `SPARSE_WEIGHT`           | `0.1`                                        | Sparse score weight in hybrid search                     |
 | `LLM_TEMPERATURE`         | `0.3`                                        | LLM generation temperature                               |
-| `USE_TOOLS`               | `false`                                      | Enable tool-calling mode                                 |
+| `USE_TOOLS`               | `true`                                       | Enable tool-calling mode                                 |
 
 ## Supported Document Formats
 
@@ -265,7 +311,7 @@ curl -X POST http://localhost:8080/api/v1/query \
 
 ```
 nepali-rag ingest <file> [-c COLLECTION] [--chunk-size N]
-nepali-rag query "<question>" [-c COLLECTION] [--provider PROVIDER] [--model MODEL] [--top-k N] [--test] [--tools]
+nepali-rag query "<question>" [-c COLLECTION] [--provider PROVIDER] [--model MODEL] [--top-k N] [--test] [--disable-tools]
 nepali-rag serve [--host HOST] [--port PORT] [--reload]
 ```
 
