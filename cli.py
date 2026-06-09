@@ -129,7 +129,7 @@ def main():
     p_query.add_argument("--model", help="LLM model name override")
     p_query.add_argument("--top-k", type=int, help="number of retrieval candidates")
     p_query.add_argument("--test", action="store_true", help="run in test mode (no LLM)")
-    p_query.add_argument("--tools", action="store_true", help="enable tool-calling mode")
+    p_query.add_argument("--disable-tools", action="store_false", dest="tools", default=True, help="disable tool-calling mode")
     p_query.set_defaults(func=cmd_query)
 
     # serve

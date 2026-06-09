@@ -21,10 +21,10 @@ class Settings(BaseSettings):
     ollama_model: str = "gemma3:4b"
     hf_model_name: str = "Qwen/Qwen3.6-35B-A3B"
     hf_base_url: str = "https://router.huggingface.co/v1"
-    hf_token: str = "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"
+    hf_token: str = ""
 
 
-    tesseract_languages: str = "nep+eng"
+    tesseract_languages: str = "nep"
 
     chunk_size: int = 256
     chunk_overlap_sentences: int = 2
@@ -32,11 +32,11 @@ class Settings(BaseSettings):
     top_k_retrieval: int = 20
     top_k_rerank: int = 5
 
-    dense_weight: float = 0.7
-    sparse_weight: float = 0.3
+    dense_weight: float = 0.9
+    sparse_weight: float = 0.1
 
     llm_temperature: float = 0.3
-    use_tools: bool = False
+    use_tools: bool = True
 
     data_dir: Path = Path("data")
     sample_docs_dir: Path = Path("data/sample_docs")

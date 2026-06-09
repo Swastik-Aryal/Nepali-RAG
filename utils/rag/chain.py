@@ -40,7 +40,7 @@ class RAGChain:
     reaches the LLM, but retrieval always uses only the current query.
     """
 
-    def __init__(self, retriever: Retriever = None, llm=None, use_tools: bool = False):
+    def __init__(self, retriever: Retriever = None, llm=None, use_tools: bool = True):
         self.retriever = retriever or Retriever()
         self.llm = llm
         self.use_tools = use_tools
