@@ -37,6 +37,7 @@ This installs all dependencies (document parsers, embeddings, vector store, LLM 
 ```bash
 # Example for CUDA 12.1 (check your version with: nvidia-smi)
 pip install torch --index-url https://download.pytorch.org/whl/cu121
+```
 
 ## Environment File (Optional but Recommended)
 
@@ -304,13 +305,13 @@ All settings are managed through environment variables or a `.env` file. See [`.
 
 The system supports five LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
 
-| Provider         | Setup                                                   | Notes                                                                          |
-| ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Ollama** | `ollama pull gemma3:4b`                               | Easiest local option, no API key needed                                        |
-| **vLLM**   | Start vLLM server with `--model google/gemma-3-4b-it` | OpenAI-compatible API, no API key needed                                       |
-| **OpenAI** | Set `OPENAI_API_KEY` or pass `--api-key`            | Direct OpenAI API (GPT-4o, etc.)                                               |
-| **Gemini** | Set `GOOGLE_API_KEY` or pass `--api-key`            | Google Gemini (gemini-2.5-flash, etc.)                                         |
-| **HF**     | Set `HF_TOKEN` or pass `--api-key`                  | Open source models from Hugging Face (choose any repo from the HF models page) |
+| Provider             | Setup                                                   | Model                                                                                  |
+| -------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **`ollama`** | `ollama pull gemma3:4b`                               | Set `model = "gemma3:4b"` OR any other model but in the ollama format.               |
+| **`vllm`**   | Start vLLM server with `--model google/gemma-3-4b-it` | Set `model = "google/gemma-3-4b-it"` OR any other model but in the vllm format.    |
+| **`openai`** | Set `OPENAI_API_KEY` or pass `--api-key`            | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.        |
+| **`gemini`** | Set `GOOGLE_API_KEY` or pass `--api-key`            | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
+| **`hf`**     | Set `HF_TOKEN` or pass `--api-key`                  | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.                  |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
 
@@ -409,6 +410,7 @@ nepali-rag/
 ## Component Details
 
 ### Architecture
+
 ![architecture](./nepali_rag/data/architecture/architecture.svg)
 
 ### Document Ingestion (`nepali_rag/ingestion/`)
@@ -469,7 +471,8 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 - **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.9 dense, 0.1 sparse).
 - **Library**: `qdrant-client`.
 
->**P.S.** Current setup only supports *Qdrant Cloud*. For local/docker Qdrant setups use
+> **P.S.** Current setup only supports *Qdrant Cloud*. For local/docker Qdrant setups use
+
 ```bash
 from nepali_rag import QdrantStore
 from qdrant_client import QdrantClient
@@ -526,12 +529,12 @@ By default, the RAG chain operates in **tool-calling mode**, the LLM receives a 
 
 A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatModel`** for any supported provider. Provider-specific logic is isolated in individual modules:
 
-| Provider               | LangChain Class                             | Default Model            |
-| ---------------------- | ------------------------------------------- | ------------------------ |
-| **Ollama**       | `ChatOllama`                              | `gemma3:4b`            |
-| **vLLM**         | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
-| **OpenAI**       | `ChatOpenAI`                              | `gpt-4o-mini`          |
-| **Gemini**       | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
+| Provider                    | LangChain Class                             | Default Model            |
+| --------------------------- | ------------------------------------------- | ------------------------ |
+| **Ollama**            | `ChatOllama`                              | `gemma3:4b`            |
+| **vLLM**              | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
+| **OpenAI**            | `ChatOpenAI`                              | `gpt-4o-mini`          |
+| **Gemini**            | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
 | **Hugging Face (HF)** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B` |
 
 All providers expose the same interface — callers use `get_llm()` and never import provider modules directly.
