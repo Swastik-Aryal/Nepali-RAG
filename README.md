@@ -1,56 +1,10 @@
-# Nepali RAG
+# Nepali-RAG
 
 Retrieval Augmented Generation framework purpose-built for the Nepali language documents, articles, books etc.
 
-Plugable into any chatbot, search interface, or LLM wrapper to give your application grounded, citation-backed answers from Nepali documents.
+Plugable into any chatbot, search interface, or LLM wrapper to give your application grounded, citation-backed answers from Nepali documents. Supports **LLM tool-calling**, the model autonomously decides when document retrieval is needed..
 
 **Why this exists:** Most RAG tooling assumes Latin-script languages. Nepali RAG handles the specific challenges of Devanagari text end-to-end.
-
-## Architecture
-
-```
-Document Upload
-      |
-      v
-+------------------+     +------------------+     +------------------------+
-| Document         | --> | Text             | --> | PageStructure-Aware    |
-| Ingestion        |     | Preprocessing    |     | Chunking               |
-| (OCR + Parsers)  |     | (NFC + Cleanup)  |     | (256-token, Devanagari |
-|                  |     |                  |     |  delimiter boundaries) |
-+------------------+     +------------------+     +------------------------+
-                                                            |
-                                                            v
-                                                  +------------------------+
-                                                  | Embeddings             |
-                                                  | (multilingual-e5-large)|
-                                                  +------------------------+
-                                                            |
-                                                            v
-                                                  +------------------------+
-                                                  | Qdrant Vector Store    |
-                                                  | (dense + sparse)       |
-                                                  +------------------------+
-                                                            |
-      User Query                                            |
-           |                                                |
-           v                                                v
-+------------------+     +------------------+     +------------------------+
-| Query Embedding  | --> | Hybrid Search    | --> | Cross-Encoder          |
-| (e5-large)       |     | (0.9 dense +     |     | Reranking              |
-|                  |     |  0.1 sparse)     |     | (mmarco-mMiniLMv2)     |
-+------------------+     +------------------+     +------------------------+
-                                                            |
-                                                            v
-                                                  +------------------------+
-                                                  | RAG Chain              |
-                                                  | (LangChain + LLM)      |
-                                                  | Always-retrieve or     |
-                                                  | Tool-calling mode      |
-                                                  +------------------------+
-                                                            |
-                                                            v
-                                                       Answer + Sources
-```
 
 ## Prerequisites
 
@@ -59,10 +13,8 @@ Document Upload
   - Linux: `sudo apt install tesseract-ocr tesseract-ocr-nep`
   - macOS: `brew install tesseract` then download `nep.traineddata`
   - Windows: install from [UB Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki) and add Nepali language data from [here](https://github.com/tesseract-ocr/tessdata/blob/main/nep.traineddata)
-- **Qdrant** vector database instance (local or cloud)
-  - Cloud: create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io)
-  - Docker: `docker run -p 6333:6333 qdrant/qdrant`
-  - Local: If you wish, pass a custom `client` to `QdrantStore(client=...)` (not recommended for production)
+- **Qdrant** vector database instance (cloud)
+  - Create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io) — you'll need the URL and API key
 - **LLM backend** (at least one):
   - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice (would recommend a model that supports tool-calling)
   - vLLM server for OpenAI-compatible API
@@ -72,45 +24,46 @@ Document Upload
 
 ## Installation
 
-### From source (development)
-
 ```bash
 git clone https://github.com/Swastik-Aryal/Nepali-RAG.git
 cd Nepali-RAG
-pip install -e ".[all]"
+pip install -e .
 ```
 
-## Quick Start
+This installs all dependencies (document parsers, embeddings, vector store, LLM providers, API server).
 
-### 1. Configure environment
+**GPU acceleration (recommended):** The default install pulls the CPU-only PyTorch build from PyPI. If you have an NVIDIA GPU, install the CUDA version of PyTorch **before or after** running `pip install -e .`:
 
-Copy the example environment file and fill in your values:
+```bash
+# Example for CUDA 12.1 (check your version with: nvidia-smi)
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+
+## Environment File (Optional but Recommended)
+
+For the Python usage (less control snippets), the library reads settings from a `.env` file. Copy the template:
 
 ```bash
 cp .env.example .env
 ```
 
+> **Important:** The `.env` file is loaded from your **current working directory** (CWD). Run your scripts from the project root, or from any directory that contains the `.env` file.
+
 At minimum, set your Qdrant connection and LLM provider:
 
 ```env
-QDRANT_URL=http://localhost:6333
+QDRANT_URL=https://your-cluster.cloud.qdrant.io
+QDRANT_API_KEY=your-qdrant-api-key
 LLM_PROVIDER=ollama
 OLLAMA_MODEL=gemma3:4b #or any other model of choice
 ```
 
-### 2. Ingest a document
+> **Note:** The `.env` file is **not required** for terminal (CLI) usage. All parameters are passed directly as command-line arguments.
 
-```bash
-nepali-rag ingest path/to/document.pdf
+## Quick Start
 
-# All available options:
-nepali-rag ingest path/to/document.pdf \
-  -c my_collection \          # target Qdrant collection name
-  --chunk-size 256 \          # token chunk size override
-  -v                          # enable debug logging
-```
+### 1. Ingest a document
 
-Or from Python:
+**Python (less control, requires `.env` file):**
 
 ```python
 from nepali_rag import DocumentPipeline
@@ -119,123 +72,217 @@ pipeline = DocumentPipeline()
 result = pipeline.ingest("path/to/document.pdf")
 print(result)
 # {'collection_name': 'doc_a1b2c3d4e5f6', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
+```
 
+**Python (more control, no `.env` needed, all params in code):**
 
-## OR FOR MORE CONTROL
-
-
+```python
 from nepali_rag import DocumentPipeline, NepaliEmbeddingModel, QdrantStore
-from qdrant_client import QdrantClient # Only for custom local clients
 
 embedding_model = NepaliEmbeddingModel()
-local_client = QdrantClient(":memory:") # for custom local client
-qdrant_store = QdrantStore(collection_name="SOME_COLLECTION_NAME", client=local_client)
-pipeline = DocumentPipeline(embedding_model=embedding_model, vector_store=qdrant_store)
+store = QdrantStore(
+  collection_name="my_collection",
+  url="https://your-cluster.cloud.qdrant.io",
+  api_key="your-qdrant-api-key",
+)
+
+pipeline = DocumentPipeline(
+    embedding_model=embedding_model,
+    vector_store=store,
+    chunk_size=256,
+    chunk_overlap_sentences=2,
+)
+
+# Single document
 result = pipeline.ingest("path/to/document.pdf")
 print(result)
-# {'collection_name': 'SOME_COLLECTION_NAME', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
+# {'collection_name': 'my_collection', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
+
+# Multiple documents (batch ingestion into the same collection)
+results = pipeline.ingest_batch([
+    "path/to/document1.pdf",
+    "path/to/document2.pdf",
+    "path/to/notes.docx",
+])
+for r in results:
+    print(f"{r['filename']}: {r['chunks_indexed']} chunks indexed")
 ```
 
-### 3. Query your documents
+**Terminal (no `.env` needed, all params as arguments):**
 
 ```bash
-nepali-rag query "नेपालको संविधानमा के लेखिएको छ?"
-
-# All available options:
-nepali-rag query "नेपालको संविधानमा के लेखिएको छ?" \
-  -c my_collection \          # Qdrant collection to search
-  --provider ollama \         # LLM provider (vllm, openai, gemini, ollama)
-  --model gemma3:4b \         # LLM model name override
-  --top-k 20 \                # number of retrieval candidates
-  --test \                    # run in test mode (no LLM, returns raw prompt)
-  --disable-tools \           # disable tool-calling mode
-  -v                          # enable debug logging
+nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
+  --qdrant-url https://your-cluster.cloud.qdrant.io \
+  --qdrant-api-key your-qdrant-api-key \
+  -c my_collection \
+  --chunk-size 256 \
+  --chunk-overlap 2 \
+  -v
 ```
 
-Or from Python:
+### 2. Query your documents
+
+**Python (less control, requires `.env` file):**
 
 ```python
 from nepali_rag import Retriever, QdrantStore, RAGChain, get_llm
 
-store = QdrantStore(collection_name="EXISTING_COLLECTION_NAME")
+store = QdrantStore(collection_name="my_collection")
 retriever = Retriever(store=store)
-llm = get_llm() # defaults to provider="ollama", model="gemma3:4b"
+llm = get_llm()
 chain = RAGChain(retriever=retriever, llm=llm)
 
 result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?")
 print(result["answer"])
+```
 
+**Python (more control, no `.env` needed, all params in code):**
 
-## OR FOR MORE CONTROL
-
-
+```python
 from nepali_rag import (
     Retriever, Reranker, QdrantStore,
     NepaliEmbeddingModel, RAGChain, get_llm,
 )
-from qdrant_client import QdrantClient # Only for custom local clients
 
-local_client = QdrantClient(":memory:") # for custom local client
-store = QdrantStore(collection_name="EXISTING_COLLECTION_NAME", client=local_client)
+store = QdrantStore(
+  collection_name="my_collection", 
+  url="https://your-cluster.cloud.qdrant.io",
+  api_key="your-qdrant-api-key"
+)
 
 embedding_model = NepaliEmbeddingModel()
 reranker = Reranker()
 
 retriever = Retriever(embedding_model=embedding_model, reranker=reranker, store=store)
-llm = get_llm(provider="hf", model="Qwen/Qwen3.6-35B-A3B") # api_key set in .env
-chain = RAGChain(retriever=retriever, llm=llm)
+llm = get_llm(provider="gemini", model="gemini-2.5-flash", api_key="your-google-api-key") # api_key not used if provider = "ollama" OR "vllm", set base_url in that case 
+chain = RAGChain(retriever=retriever, llm=llm, use_tools=True)
 
-result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?")
+# First question
+result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?", top_k_retrieval=20)
 print(result["answer"])
+
+# Follow-up with conversation history (only the current question is used for retrieval)
+history = [
+    {"role": "user", "content": "नेपालको संविधानमा के लेखिएको छ?"},
+    {"role": "assistant", "content": result["answer"]},
+]
+follow_up = chain.run(
+    question="त्यसको बारेमा थप विस्तारमा बताउनुहोस्",
+    conversation_history=history,
+    top_k_retrieval=20,
+)
+print(follow_up["answer"])
 ```
 
-### 4. Start the API server
+**Conversation history format:**
+
+```python
+# A list of previous turns (do NOT include the current question here)
+conversation_history = [
+    {"role": "user", "content": "नेपालको राजधानी कहाँ हो?"},
+    {"role": "assistant", "content": "नेपालको राजधानी काठमाडौं हो।"},
+    {"role": "user", "content": "त्यहाँको जनसंख्या कति हो?"},
+    {"role": "assistant", "content": "काठमाडौं उपत्यकाको जनसंख्या लगभग ३० लाख छ।"},
+]
+```
+
+**Terminal (no `.env` needed, all params as arguments):**
 
 ```bash
-nepali-rag serve
+nepali-rag query "नेपालको संविधानमा के लेखिएको छ?" \
+  --qdrant-url https://your-cluster.cloud.qdrant.io \
+  --qdrant-api-key your-qdrant-api-key \
+  -c my_collection \
+  --provider ollama \
+  --model gemma3:4b \
+  --top-k 20 \
+  --temperature 0.3 \
+  -v
+```
 
-# All available options:
-nepali-rag serve \
-  --host 0.0.0.0 \            # bind address (default: 0.0.0.0)
-  --port 8080 \                # port (default: 8080)
-  --reload \                   # enable auto-reload for development
-  -v                           # enable debug logging
+With conversation history (pass a JSON file or inline JSON):
+
+```bash
+# Using a JSON file
+nepali-rag query "त्यसको बारेमा थप विस्तारमा बताउनुहोस्" \
+  --qdrant-url https://your-cluster.cloud.qdrant.io \
+  --qdrant-api-key your-qdrant-api-key \
+  -c my_collection \
+  --provider ollama \
+  --model gemma3:4b \
+  --history history.json \
+  -v
+
+# Using inline JSON
+nepali-rag query "Can you translate that to English?" \
+  --qdrant-url https://your-cluster.cloud.qdrant.io \
+  --qdrant-api-key your-qdrant-api-key \
+  -c my_collection \
+  --provider ollama \
+  --model gemma3:4b \
+  --history '[{"role":"user","content":"नेपालको राजधानी कहाँ हो?"},{"role":"assistant","content":"नेपालको राजधानी काठमाडौं हो।"}]' \
+  -v
+```
+
+> **Tip:** By default, tool-calling mode is enabled, the LLM decides when retrieval is needed (recommended). Use `--disable-tools` to force retrieval on every query (always-retrieve mode).
+
+For providers that need an API key (openai, gemini, hf):
+
+```bash
+nepali-rag query "नेपालको संविधानमा के लेखिएको छ?" \
+  --qdrant-url https://your-cluster.cloud.qdrant.io \
+  --qdrant-api-key your-qdrant-api-key \
+  -c my_collection \
+  --provider gemini \
+  --model gemini-2.5-flash \
+  --api-key your-google-api-key \
+  -v
+```
+
+### 3. Start the API server
+
+**Terminal:**
+
+```bash
+nepali-rag serve --host 0.0.0.0 --port 8080 --reload -v
 ```
 
 The API will be available at `http://localhost:8080`. Interactive docs at `http://localhost:8080/docs`.
+
+> **Note:** The API server reads configuration from `.env` since it manages multiple requests. Make sure you have a `.env` file in your CWD when running the server.
 
 ## Configuration
 
 All settings are managed through environment variables or a `.env` file. See [`.env.example`](.env.example) for the full list.
 
-| Setting                     | Default                                        | Purpose                                                  |
-| --------------------------- | ---------------------------------------------- | -------------------------------------------------------- |
-| `QDRANT_URL`              | *(empty)*                                    | Vector database connection URL                           |
-| `QDRANT_API_KEY`          | *(empty)*                                    | Qdrant Cloud authentication key                          |
-| `COLLECTION_NAME`         | `nepali_docs`                                | Default Qdrant collection                                |
-| `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                     |
-| `RERANKER_MODEL`          | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Reranker model name                                      |
-| `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama` |
-| `VLLM_MODEL`              | `google/gemma-3-4b-it`                       | Model for vLLM provider                                  |
-| `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                     |
-| `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key                                           |
-| `OPENAI_MODEL`            | `gpt-4o-mini`                                | Model for OpenAI provider                                |
-| `GOOGLE_API_KEY`          | *(empty)*                                    | Google API key for Gemini                                |
-| `GEMINI_MODEL`            | `gemini-2.5-flash`                           | Model for Gemini provider                                |
-| `OLLAMA_BASE_URL`         | `http://localhost:11434`                     | Ollama server endpoint                                   |
-| `OLLAMA_MODEL`            | `gemma3:4b`                                  | Model for Ollama provider                                |
-| `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                     |
-| `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                          |
-| `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                              |
-| `TESSERACT_LANGUAGES`     | `nep`                                        | OCR language configuration                               |
-| `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens                       |
-| `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                          |
-| `TOP_K_RETRIEVAL`         | `20`                                         | Hybrid search candidate count                            |
-| `TOP_K_RERANK`            | `5`                                          | Final reranked result count                              |
-| `DENSE_WEIGHT`            | `0.9`                                        | Dense score weight in hybrid search                      |
-| `SPARSE_WEIGHT`           | `0.1`                                        | Sparse score weight in hybrid search                     |
-| `LLM_TEMPERATURE`         | `0.3`                                        | LLM generation temperature                               |
-| `USE_TOOLS`               | `true`                                       | Enable tool-calling mode                                 |
+| Setting                     | Default                                        | Purpose                                                          |
+| --------------------------- | ---------------------------------------------- | ---------------------------------------------------------------- |
+| `QDRANT_URL`              | *(empty)*                                    | Vector database connection URL                                   |
+| `QDRANT_API_KEY`          | *(empty)*                                    | Qdrant Cloud authentication key                                  |
+| `COLLECTION_NAME`         | `nepali_docs`                                | Default Qdrant collection                                        |
+| `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                             |
+| `RERANKER_MODEL`          | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Reranker model name                                              |
+| `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf` |
+| `VLLM_MODEL`              | `google/gemma-3-4b-it`                       | Model for vLLM provider                                          |
+| `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                             |
+| `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key                                                   |
+| `OPENAI_MODEL`            | `gpt-4o-mini`                                | Model for OpenAI provider                                        |
+| `GOOGLE_API_KEY`          | *(empty)*                                    | Google API key for Gemini                                        |
+| `GEMINI_MODEL`            | `gemini-2.5-flash`                           | Model for Gemini provider                                        |
+| `OLLAMA_BASE_URL`         | `http://localhost:11434`                     | Ollama server endpoint                                           |
+| `OLLAMA_MODEL`            | `gemma3:4b`                                  | Model for Ollama provider                                        |
+| `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                             |
+| `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                                  |
+| `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                                      |
+| `TESSERACT_LANGUAGES`     | `nep`                                        | OCR language configuration                                       |
+| `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens                                     |
+| `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                                  |
+| `TOP_K_RETRIEVAL`         | `20`                                         | Hybrid search candidate count                                    |
+| `TOP_K_RERANK`            | `5`                                          | Final reranked result count                                      |
+| `DENSE_WEIGHT`            | `0.9`                                        | Dense score weight in hybrid search                              |
+| `SPARSE_WEIGHT`           | `0.1`                                        | Sparse score weight in hybrid search                             |
+| `LLM_TEMPERATURE`         | `0.3`                                        | LLM generation temperature                                       |
+| `USE_TOOLS`               | `true`                                       | Enable tool-calling mode                                         |
 
 ## Supported Document Formats
 
@@ -255,21 +302,21 @@ All settings are managed through environment variables or a `.env` file. See [`.
 
 ## LLM Providers
 
-The system supports five LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable.
+The system supports five LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
 
 | Provider         | Setup                                                   | Notes                                                                          |
 | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | **Ollama** | `ollama pull gemma3:4b`                               | Easiest local option, no API key needed                                        |
 | **vLLM**   | Start vLLM server with `--model google/gemma-3-4b-it` | OpenAI-compatible API, no API key needed                                       |
-| **OpenAI** | Set `OPENAI_API_KEY`                                  | Direct OpenAI API (GPT-4o, etc.)                                               |
-| **Gemini** | Set `GOOGLE_API_KEY`                                  | Google Gemini (gemini-2.5-flash, etc.)                                         |
-| **HF**     | Set `HF_TOKEN`                                        | Open source models from Hugging Face (choose any repo from the HF models page) |
+| **OpenAI** | Set `OPENAI_API_KEY` or pass `--api-key`            | Direct OpenAI API (GPT-4o, etc.)                                               |
+| **Gemini** | Set `GOOGLE_API_KEY` or pass `--api-key`            | Google Gemini (gemini-2.5-flash, etc.)                                         |
+| **HF**     | Set `HF_TOKEN` or pass `--api-key`                  | Open source models from Hugging Face (choose any repo from the HF models page) |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
 
 ## API Endpoints
 
-Start the server with `nepali-rag serve` (requires `pip install nepali-rag[api]`).
+Start the server with `nepali-rag serve`.
 
 | Method   | Path                           | Purpose                                      |
 | -------- | ------------------------------ | -------------------------------------------- |
@@ -301,9 +348,34 @@ curl -X POST http://localhost:8080/api/v1/query \
 ## CLI Reference
 
 ```
-nepali-rag ingest <file> [-c COLLECTION] [--chunk-size N]
-nepali-rag query "<question>" [-c COLLECTION] [--provider PROVIDER] [--model MODEL] [--top-k N] [--test] [--disable-tools]
-nepali-rag serve [--host HOST] [--port PORT] [--reload]
+nepali-rag ingest <file> [<file> ...]
+    --qdrant-url URL          (required) Qdrant instance URL
+    --qdrant-api-key KEY      (required) Qdrant API key
+    -c, --collection NAME     collection name (default: nepali_docs)
+    --chunk-size N            token chunk size (default: 256)
+    --chunk-overlap N         sentence overlap (default: 2)
+    -v                        enable debug logging
+
+nepali-rag query "<question>"
+    --qdrant-url URL          (required) Qdrant instance URL
+    --qdrant-api-key KEY      (required) Qdrant API key
+    -c, --collection NAME     collection name (default: nepali_docs)
+    --provider PROVIDER       LLM provider (default: ollama)
+    --model MODEL             LLM model name (default: gemma3:4b)
+    --api-key KEY             API key for LLM provider (required for openai, gemini, hf)
+    --llm-base-url URL        base URL for LLM server (for vllm, ollama, hf)
+    --temperature FLOAT       LLM temperature (default: 0.3)
+    --top-k N                 retrieval candidates (default: 20)
+    --history FILE_OR_JSON    conversation history (JSON file path or inline JSON string)
+    --test                    test mode (no LLM, returns raw prompt)
+    --disable-tools           disable tool-calling mode (forces retrieval on every query)
+    -v                        enable debug logging
+
+nepali-rag serve
+    --host HOST               bind address (default: 0.0.0.0)
+    --port PORT               port (default: 8080)
+    --reload                  auto-reload for development
+    -v                        enable debug logging
 ```
 
 ## Project Structure
@@ -335,6 +407,9 @@ nepali-rag/
 ```
 
 ## Component Details
+
+### Architecture
+![architecture](./nepali_rag/data/architecture/architecture.svg)
 
 ### Document Ingestion (`nepali_rag/ingestion/`)
 
@@ -389,10 +464,20 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 
 ### Vector Store (`nepali_rag/vectorstore/`)
 
-- **Database**: **Qdrant** (local Docker or Qdrant Cloud).
+- **Database**: **Qdrant** (Qdrant Cloud).
 - **Dual vector storage**: Each chunk is stored with both a **dense vector** (1024-dim cosine, from the embedding model) and a **sparse vector** (term-frequency based, computed via MD5 hashing of whitespace-split tokens into a 2²⁰-dimensional space).
 - **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.9 dense, 0.1 sparse).
 - **Library**: `qdrant-client`.
+
+>**P.S.** Current setup only supports *Qdrant Cloud*. For local/docker Qdrant setups use
+```bash
+from nepali_rag import QdrantStore
+from qdrant_client import QdrantClient
+
+local_client = QdrantClient("CONFIGURE DOCKER PORT/LOCAL TYPE HERE") # for custom local client
+qdrant_store = QdrantStore(collection_name="SOME_COLLECTION_NAME", client=local_client)
+
+```
 
 ---
 
@@ -424,6 +509,19 @@ Connects retrieval to generation with three operating modes:
 
 ---
 
+### Tool-Calling Mode
+
+By default, the RAG chain operates in **tool-calling mode**, the LLM receives a `retrieve_documents` tool definition and autonomously decides whether retrieval is necessary for each message.
+
+**How it works:**
+
+1. The user sends a message (e.g., a question about Nepali law).
+2. The LLM evaluates whether it needs to search documents to answer.
+3. If yes → it calls `retrieve_documents`, the retrieval pipeline runs, and the LLM generates an answer grounded in the retrieved context.
+4. If no → the LLM responds directly from conversation context (e.g., for greetings, follow-up clarifications, translations of a previous answer).
+
+---
+
 ### LLM Integration (`nepali_rag/llm/`)
 
 A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatModel`** for any supported provider. Provider-specific logic is isolated in individual modules:
@@ -434,7 +532,7 @@ A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatM
 | **vLLM**         | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
 | **OpenAI**       | `ChatOpenAI`                              | `gpt-4o-mini`          |
 | **Gemini**       | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
-| **Hugging Face** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B` |
+| **Hugging Face (HF)** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B` |
 
 All providers expose the same interface — callers use `get_llm()` and never import provider modules directly.
 
