@@ -13,55 +13,93 @@ def _setup_logging(verbose: bool = False):
 
 
 def cmd_ingest(args):
-    """Ingest a document through the full pipeline (load, normalize, chunk, embed, index)."""
+    """Ingest one or more documents through the full pipeline."""
     _setup_logging(args.verbose)
+    from nepali_rag.embeddings.embedding_model import NepaliEmbeddingModel
+    from nepali_rag.vectorstore.qdrant_store import QdrantStore
     from nepali_rag.pipeline.document_pipeline import DocumentPipeline
 
-    kwargs = {}
-    if args.collection:
-        kwargs["collection_name"] = args.collection
-    if args.chunk_size:
-        kwargs["chunk_size"] = args.chunk_size
+    embedding_model = NepaliEmbeddingModel()
+    store = QdrantStore(
+        collection_name=args.collection,
+        url=args.qdrant_url,
+        api_key=args.qdrant_api_key,
+    )
+    pipeline = DocumentPipeline(
+        embedding_model=embedding_model,
+        vector_store=store,
+        collection_name=args.collection,
+        chunk_size=args.chunk_size,
+        chunk_overlap_sentences=args.chunk_overlap,
+    )
 
-    pipeline = DocumentPipeline(**kwargs)
-    result = pipeline.ingest(args.file)
+    results = pipeline.ingest_batch(args.files)
 
-    print(f"Collection : {result['collection_name']}")
-    print(f"File       : {result['filename']}")
-    print(f"Pages      : {result['pages_extracted']}")
-    print(f"Chunks     : {result['chunks_created']}")
-    print(f"Indexed    : {result['chunks_indexed']}")
+    for result in results:
+        print(f"\nCollection : {result['collection_name']}")
+        print(f"File       : {result['filename']}")
+        print(f"Pages      : {result['pages_extracted']}")
+        print(f"Chunks     : {result['chunks_created']}")
+        print(f"Indexed    : {result['chunks_indexed']}")
+
+    if len(results) > 1:
+        total_chunks = sum(r['chunks_indexed'] for r in results)
+        print(f"\n Total: {len(results)} files, {total_chunks} chunks indexed")
+
+
+def _load_history(history_arg: str) -> list[dict] | None:
+    """Load conversation history from a JSON file path or inline JSON string."""
+    if not history_arg:
+        return None
+    import json
+    from pathlib import Path
+
+    path = Path(history_arg)
+    if path.is_file():
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    return json.loads(history_arg)
 
 
 def cmd_query(args):
     """Run the full RAG chain and print the answer."""
     _setup_logging(args.verbose)
-    from nepali_rag.config.settings import settings
-    from nepali_rag.retrieval.retriever import Retriever
+    from nepali_rag.embeddings.embedding_model import NepaliEmbeddingModel
     from nepali_rag.vectorstore.qdrant_store import QdrantStore
+    from nepali_rag.retrieval.retriever import Retriever
+    from nepali_rag.retrieval.reranker import Reranker
     from nepali_rag.rag.chain import RAGChain
 
-    collection = args.collection or settings.collection_name
+    embedding_model = NepaliEmbeddingModel()
+    reranker = Reranker()
+
+    store = QdrantStore(
+        collection_name=args.collection,
+        url=args.qdrant_url,
+        api_key=args.qdrant_api_key,
+    )
+    retriever = Retriever(embedding_model=embedding_model, reranker=reranker, store=store)
 
     llm = None
     if not args.test:
         try:
             from nepali_rag.llm.base import get_llm
-            llm_kwargs = {}
-            if args.provider:
-                llm_kwargs["provider"] = args.provider
-            if args.model:
-                llm_kwargs["model"] = args.model
+            llm_kwargs = {"provider": args.provider, "model": args.model, "temperature": args.temperature}
+            if args.api_key:
+                llm_kwargs["api_key"] = args.api_key
+            if args.llm_base_url:
+                llm_kwargs["base_url"] = args.llm_base_url
             llm = get_llm(**llm_kwargs)
         except Exception as exc:
             logging.getLogger(__name__).warning("LLM unavailable (%s), running in test mode", exc)
 
-    store = QdrantStore(collection_name=collection)
-    retriever = Retriever(store=store)
     chain = RAGChain(retriever=retriever, llm=llm, use_tools=args.tools)
+
+    conversation_history = _load_history(args.history)
 
     result = chain.run(
         question=args.question,
+        conversation_history=conversation_history,
         top_k_retrieval=args.top_k,
     )
 
@@ -78,15 +116,7 @@ def cmd_query(args):
 def cmd_serve(args):
     """Start the FastAPI server."""
     _setup_logging(args.verbose)
-    try:
-        import uvicorn
-    except ImportError:
-        print(
-            "uvicorn is not installed. Install the api extras:\n"
-            "  pip install nepali-rag[api]",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    import uvicorn
 
     uvicorn.run(
         "nepali_rag.api.main:app",
@@ -108,35 +138,35 @@ def main():
     )
     subparsers = parser.add_subparsers(dest="command")
 
-    # ingest
-    p_ingest = subparsers.add_parser(
-        "ingest",
-        help="ingest a document into the vector store",
-    )
-    p_ingest.add_argument("file", help="path to the document file")
-    p_ingest.add_argument("-c", "--collection", help="target Qdrant collection name")
-    p_ingest.add_argument("--chunk-size", type=int, help="token chunk size override")
+    # ingest 
+    p_ingest = subparsers.add_parser("ingest", help="ingest documents into the vector store")
+    p_ingest.add_argument("files", nargs="+", help="path(s) to the document file(s)")
+    p_ingest.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
+    p_ingest.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
+    p_ingest.add_argument("-c", "--collection", default="nepali_docs", help="target Qdrant collection name (default: nepali_docs)")
+    p_ingest.add_argument("--chunk-size", type=int, default=256, help="token chunk size (default: 256)")
+    p_ingest.add_argument("--chunk-overlap", type=int, default=2, help="sentence overlap between chunks (default: 2)")
     p_ingest.set_defaults(func=cmd_ingest)
 
-    # query
-    p_query = subparsers.add_parser(
-        "query",
-        help="query the RAG pipeline",
-    )
+    # query 
+    p_query = subparsers.add_parser("query", help="query the RAG pipeline")
     p_query.add_argument("question", help="the question to ask")
-    p_query.add_argument("-c", "--collection", help="Qdrant collection to search")
-    p_query.add_argument("--provider", help="LLM provider override (vllm, openai, gemini, ollama)")
-    p_query.add_argument("--model", help="LLM model name override")
-    p_query.add_argument("--top-k", type=int, help="number of retrieval candidates")
-    p_query.add_argument("--test", action="store_true", help="run in test mode (no LLM)")
+    p_query.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
+    p_query.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
+    p_query.add_argument("-c", "--collection", default="nepali_docs", help="Qdrant collection to search (default: nepali_docs)")
+    p_query.add_argument("--provider", default="ollama", help="LLM provider: ollama, vllm, openai, gemini, hf (default: ollama)")
+    p_query.add_argument("--model", default="gemma3:4b", help="LLM model name (default: gemma3:4b)")
+    p_query.add_argument("--api-key", default=None, help="API key for the LLM provider (required for openai, gemini, hf)")
+    p_query.add_argument("--llm-base-url", default=None, help="base URL for the LLM server (for vllm, ollama, hf)")
+    p_query.add_argument("--temperature", type=float, default=0.3, help="LLM temperature (default: 0.3)")
+    p_query.add_argument("--top-k", type=int, default=20, help="number of retrieval candidates (default: 20)")
+    p_query.add_argument("--history", default=None, help="conversation history as a JSON file path or inline JSON string")
+    p_query.add_argument("--test", action="store_true", help="test mode (no LLM, returns raw prompt)")
     p_query.add_argument("--disable-tools", action="store_false", dest="tools", default=True, help="disable tool-calling mode")
     p_query.set_defaults(func=cmd_query)
 
-    # serve
-    p_serve = subparsers.add_parser(
-        "serve",
-        help="start the FastAPI server",
-    )
+    # serve 
+    p_serve = subparsers.add_parser("serve", help="start the FastAPI server")
     p_serve.add_argument("--host", default="0.0.0.0", help="bind address (default: 0.0.0.0)")
     p_serve.add_argument("--port", type=int, default=8080, help="port (default: 8080)")
     p_serve.add_argument("--reload", action="store_true", help="enable auto-reload for development")

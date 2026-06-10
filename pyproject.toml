@@ -54,41 +54,35 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
 
-    # LangChain core
-    "langchain>=0.2.0",
-    "langchain-community>=0.2.0",
-    "langchain-core>=0.2.0",
+    # LangChain
+    "langchain-core>=0.3.0",
+    "langchain-text-splitters>=0.3.0",
+    "langchain-openai>=0.3.0",
+    "langchain-google-genai>=2.0.0",
+    "langchain-ollama>=0.3.0",
 
     # Embeddings and reranking
     "sentence-transformers>=3.0.0",
     "transformers>=4.40.0",
+    "numpy>=1.26.0",
     "torch>=2.0.0",
 
     # Vector store
     "qdrant-client>=1.9.0",
-]
 
-[project.optional-dependencies]
-api = [
+    # API
     "fastapi>=0.111.0",
     "uvicorn>=0.29.0",
     "python-multipart>=0.0.9",
-]
-openai = [
+
+    # LLM providers
     "openai>=1.0.0",
 ]
-gemini = [
-    "langchain-google-genai>=2.0.0",
-]
-ollama = [
-    "langchain-ollama>=0.3.0",
-]
+
+[project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "ruff>=0.4.0",
-]
-all = [
-    "nepali-rag[api,openai,gemini,ollama,dev]",
 ]
 
 [project.urls]
