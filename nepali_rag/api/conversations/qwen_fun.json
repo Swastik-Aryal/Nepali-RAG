@@ -1,0 +1,18 @@
+[
+  {
+    "role": "user",
+    "content": "लक्ष्मी प्रसाद देवकोटा को बुवाको नाम के हो ?"
+  },
+  {
+    "role": "assistant",
+    "content": "\n\nलक्ष्मी प्रसाद देवकोटाको बुबाको नाम **तिलमाधव देवकोटा** हो [1]।"
+  },
+  {
+    "role": "user",
+    "content": "hi. tell me about yourself?"
+  },
+  {
+    "role": "assistant",
+    "content": "\n\nHello! I am an AI assistant designed to help you find information. My main capability is searching through a document knowledge base to retrieve specific facts, details, and references from uploaded files.\n\nIf you have questions about the content of those documents, I can help you find the answers. How can I assist you today?"
+  }
+]

@@ -1,0 +1,1 @@
+from nepali_rag.pipeline.document_pipeline import DocumentPipeline

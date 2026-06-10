@@ -36,8 +36,8 @@ Document Upload
            v                                                v
 +------------------+     +------------------+     +------------------------+
 | Query Embedding  | --> | Hybrid Search    | --> | Cross-Encoder          |
-| (e5-large)       |     | (0.8 dense +     |     | Reranking              |
-|                  |     |  0.2 sparse)     |     | (mmarco-mMiniLMv2)     |
+| (e5-large)       |     | (0.9 dense +     |     | Reranking              |
+|                  |     |  0.1 sparse)     |     | (mmarco-mMiniLMv2)     |
 +------------------+     +------------------+     +------------------------+
                                                             |
                                                             v
@@ -62,7 +62,7 @@ Document Upload
 - **Qdrant** vector database instance (local or cloud)
   - Cloud: create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io)
   - Docker: `docker run -p 6333:6333 qdrant/qdrant`
-  - Local: If you wish, add custom `client` to `qdrant/qdrant_store.py` (Not recommended)
+  - Local: If you wish, pass a custom `client` to `QdrantStore(client=...)` (not recommended for production)
 - **LLM backend** (at least one):
   - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice (would recommend a model that supports tool-calling)
   - vLLM server for OpenAI-compatible API
@@ -113,7 +113,7 @@ nepali-rag ingest path/to/document.pdf \
 Or from Python:
 
 ```python
-from utils.pipeline import DocumentPipeline
+from nepali_rag import DocumentPipeline
 
 pipeline = DocumentPipeline()
 result = pipeline.ingest("path/to/document.pdf")
@@ -124,18 +124,16 @@ print(result)
 ## OR FOR MORE CONTROL
 
 
-from utils.pipeline import DocumentPipeline
-from utils.embeddings import NepaliEmbeddingModel
-from utils.vectorstore import QdrantStore
+from nepali_rag import DocumentPipeline, NepaliEmbeddingModel, QdrantStore
 from qdrant_client import QdrantClient # Only for custom local clients
 
 embedding_model = NepaliEmbeddingModel()
 local_client = QdrantClient(":memory:") # for custom local client
-qdrant_store = QdrantStore(collection_name = "SOME_COLLECTION_NAME", client = local_client)
-pipeline = DocumentPipeline(embedding_model = embedding_model, vector_store = qdrant_store)
+qdrant_store = QdrantStore(collection_name="SOME_COLLECTION_NAME", client=local_client)
+pipeline = DocumentPipeline(embedding_model=embedding_model, vector_store=qdrant_store)
 result = pipeline.ingest("path/to/document.pdf")
 print(result)
-# {'collection_name': 'doc_a1b2c3d4e5f6', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
+# {'collection_name': 'SOME_COLLECTION_NAME', 'filename': '...', 'pages_extracted': 12, 'chunks_created': 45, 'chunks_indexed': 45}
 ```
 
 ### 3. Query your documents
@@ -157,14 +155,11 @@ nepali-rag query "नेपालको संविधानमा के ल�
 Or from Python:
 
 ```python
-from utils.retrieval import Retriever
-from utils.vectorstore import QdrantStore
-from utils.rag import RAGChain
-from utils.llm import get_llm
+from nepali_rag import Retriever, QdrantStore, RAGChain, get_llm
 
-qdrant_store = QdrantStore(collection_name = "EXISTING_COLLECTION_NAME")
-retriever = Retriever(store = qdrant_store)
-llm = get_llm() # defaults to "provider" = "ollama" and "model" = "gemma3:4b"
+store = QdrantStore(collection_name="EXISTING_COLLECTION_NAME")
+retriever = Retriever(store=store)
+llm = get_llm() # defaults to provider="ollama", model="gemma3:4b"
 chain = RAGChain(retriever=retriever, llm=llm)
 
 result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?")
@@ -174,24 +169,20 @@ print(result["answer"])
 ## OR FOR MORE CONTROL
 
 
+from nepali_rag import (
+    Retriever, Reranker, QdrantStore,
+    NepaliEmbeddingModel, RAGChain, get_llm,
+)
 from qdrant_client import QdrantClient # Only for custom local clients
-from utils.vectorstore import QdrantStore
-from utils.embeddings import NepaliEmbeddingModel
-
-from utils.retrieval import Retriever
-from utils.retrieval import Reranker
-
-from utils.rag import RAGChain
-from utils.llm import get_llm
 
 local_client = QdrantClient(":memory:") # for custom local client
-qdrant_store = QdrantStore(collection_name = "EXISTING_COLLECTION_NAME", client = local_client)
+store = QdrantStore(collection_name="EXISTING_COLLECTION_NAME", client=local_client)
 
 embedding_model = NepaliEmbeddingModel()
 reranker = Reranker()
 
-retriever = Retriever(embedding_model = embedding_model, reranker = reranker, store = qdrant_store)
-llm = get_llm(provider = "hf", model = "Qwen/Qwen3.6-35B-A3B") # [api_key] set in the [.env]
+retriever = Retriever(embedding_model=embedding_model, reranker=reranker, store=store)
+llm = get_llm(provider="hf", model="Qwen/Qwen3.6-35B-A3B") # api_key set in .env
 chain = RAGChain(retriever=retriever, llm=llm)
 
 result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?")
@@ -237,7 +228,7 @@ All settings are managed through environment variables or a `.env` file. See [`.
 | `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                          |
 | `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                              |
 | `TESSERACT_LANGUAGES`     | `nep`                                        | OCR language configuration                               |
-| `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens // 2                       |
+| `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens                       |
 | `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                          |
 | `TOP_K_RETRIEVAL`         | `20`                                         | Hybrid search candidate count                            |
 | `TOP_K_RERANK`            | `5`                                          | Final reranked result count                              |
@@ -264,7 +255,7 @@ All settings are managed through environment variables or a `.env` file. See [`.
 
 ## LLM Providers
 
-The system supports four LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable.
+The system supports five LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable.
 
 | Provider         | Setup                                                   | Notes                                                                          |
 | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -272,7 +263,7 @@ The system supports four LLM backends through a unified `get_llm()` factory. Swi
 | **vLLM**   | Start vLLM server with `--model google/gemma-3-4b-it` | OpenAI-compatible API, no API key needed                                       |
 | **OpenAI** | Set `OPENAI_API_KEY`                                  | Direct OpenAI API (GPT-4o, etc.)                                               |
 | **Gemini** | Set `GOOGLE_API_KEY`                                  | Google Gemini (gemini-2.5-flash, etc.)                                         |
-| **HF**     | Set `hf_token`                                        | Open source models from Hugging-face (choose any repo from the hf models page) |
+| **HF**     | Set `HF_TOKEN`                                        | Open source models from Hugging Face (choose any repo from the HF models page) |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
 
@@ -319,12 +310,8 @@ nepali-rag serve [--host HOST] [--port PORT] [--reload]
 
 ```
 nepali-rag/
-├── api/                         # FastAPI HTTP layer
-│   ├── main.py                  # App setup, lifespan, CORS
-│   ├── routes.py                # Upload, query, health, collection endpoints
-│   ├── schemas.py               # Pydantic request/response models
-│   └── conversations/           # Server-side conversation persistence
-├── utils/
+├── nepali_rag/                  # Core package
+│   ├── __init__.py              # Public API exports and __version__
 │   ├── config/settings.py       # Centralized settings (pydantic-settings)
 │   ├── ingestion/               # Document parsers (OCR, docx, pptx, etc.)
 │   ├── preprocessing/           # Unicode NFC normalization, Nepali detection
@@ -334,7 +321,12 @@ nepali-rag/
 │   ├── retrieval/               # Hybrid retrieval + cross-encoder reranking
 │   ├── rag/                     # RAG chain (always-retrieve + tool-calling)
 │   ├── llm/                     # Multi-provider LLM factory
-│   └── pipeline/                # Full document ingestion orchestrator
+│   ├── pipeline/                # Full document ingestion orchestrator
+│   └── api/                     # FastAPI HTTP layer
+│       ├── main.py              # App setup, lifespan, CORS
+│       ├── routes.py            # Upload, query, health, collection endpoints
+│       ├── schemas.py           # Pydantic request/response models
+│       └── conversations/       # Server-side conversation persistence
 ├── cli.py                       # CLI entry point (ingest, query, serve)
 ├── pyproject.toml               # Package metadata and dependencies
 ├── .env.example                 # Environment variable template
@@ -344,7 +336,7 @@ nepali-rag/
 
 ## Component Details
 
-### Document Ingestion (`utils/ingestion/`)
+### Document Ingestion (`nepali_rag/ingestion/`)
 
 Handles loading and text extraction from 11+ document formats. PDFs are rendered page-by-page to 300 DPI images using **PyMuPDF** (`fitz`) and processed through **Tesseract OCR** with Nepali (`nep`) + English (`eng`) language data. Other formats use dedicated parsers:
 
@@ -364,7 +356,7 @@ Every page is returned as a `PageResult` dataclass carrying the extracted text, 
 
 ---
 
-### Text Preprocessing (`utils/preprocessing/`)
+### Text Preprocessing (`nepali_rag/preprocessing/`)
 
 Normalizes raw extracted text for consistent downstream processing:
 
@@ -375,18 +367,18 @@ Normalizes raw extracted text for consistent downstream processing:
 
 ---
 
-### Chunking (`utils/chunking/`)
+### Chunking (`nepali_rag/chunking/`)
 
 A two-level, structure-aware chunker that respects both paragraph boundaries and Nepali sentence delimiters (purna viram `।`, double danda `॥`, and standard `.`, `!`, `?`).
 
 - **Level 1**: **LangChain's `RecursiveCharacterTextSplitter`** splits on structural separators (`\n\n`, `\n`, ) to keep paragraphs intact. A post-processing pass (`_ensure_sentence_boundaries`) trims every block to end on a sentence delimiter, carrying incomplete fragments forward.
 - **Level 2**: Oversized blocks are split at sentence boundaries with configurable overlap (default: 2 sentences).
-- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model (`intfloat/multilingual-e5-large`) to count tokens accurately. Default chunk size is 512(limit) / 2 i.e. **256** **tokens**.
+- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model (`intfloat/multilingual-e5-large`) to count tokens accurately. Default chunk size is **256 tokens** (half the model's 512-token context limit).
 - Small blocks below half the chunk size are merged with neighbors to avoid tiny fragments.
 
 ---
 
-### Embeddings (`utils/embeddings/`)
+### Embeddings (`nepali_rag/embeddings/`)
 
 - **Model**: [`intfloat/multilingual-e5-large`](https://huggingface.co/intfloat/multilingual-e5-large) — a 1024-dimension multilingual embedding model with strong Nepali support.
 - **Library**: **sentence-transformers** (`SentenceTransformer`).
@@ -395,16 +387,16 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 
 ---
 
-### Vector Store (`utils/vectorstore/`)
+### Vector Store (`nepali_rag/vectorstore/`)
 
 - **Database**: **Qdrant** (local Docker or Qdrant Cloud).
 - **Dual vector storage**: Each chunk is stored with both a **dense vector** (1024-dim cosine, from the embedding model) and a **sparse vector** (term-frequency based, computed via MD5 hashing of whitespace-split tokens into a 2²⁰-dimensional space).
-- **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.7 dense, 0.3 sparse).
+- **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.9 dense, 0.1 sparse).
 - **Library**: `qdrant-client`.
 
 ---
 
-### Retrieval (`utils/retrieval/`)
+### Retrieval (`nepali_rag/retrieval/`)
 
 Two-stage retrieval pipeline:
 
@@ -416,7 +408,7 @@ Two-stage retrieval pipeline:
 
 ---
 
-### RAG Chain (`utils/rag/`)
+### RAG Chain (`nepali_rag/rag/`)
 
 Connects retrieval to generation with three operating modes:
 
@@ -432,7 +424,7 @@ Connects retrieval to generation with three operating modes:
 
 ---
 
-### LLM Integration (`utils/llm/`)
+### LLM Integration (`nepali_rag/llm/`)
 
 A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatModel`** for any supported provider. Provider-specific logic is isolated in individual modules:
 
@@ -448,7 +440,7 @@ All providers expose the same interface — callers use `get_llm()` and never im
 
 ---
 
-### Document Pipeline (`utils/pipeline/`)
+### Document Pipeline (`nepali_rag/pipeline/`)
 
 The `DocumentPipeline` class orchestrates the full ingestion workflow in a single call:
 
@@ -462,18 +454,18 @@ load_document() → normalize_text() → chunk_pages() → embed_documents() →
 
 ---
 
-### FastAPI Server (`api/`)
+### FastAPI Server (`nepali_rag/api/`)
 
 A REST API layer built with **FastAPI** and **Uvicorn**:
 
 - **Lifespan initialization**: The embedding model and reranker are loaded once at server startup and shared across all requests via `app.state`, avoiding per-request loading overhead.
-- **Conversation persistence**: Each query session is tracked by a `conversation_id`. Conversation history is stored as JSON files in `api/conversations/` and automatically loaded/appended on subsequent queries.
+- **Conversation persistence**: Each query session is tracked by a `conversation_id`. Conversation history is stored as JSON files in `nepali_rag/api/conversations/` and automatically loaded/appended on subsequent queries.
 - **Graceful fallback**: If the LLM fails at connection or invocation time, the API falls back to test mode rather than returning a 500 error.
 - **CORS**: Enabled for all origins to support frontend integrations.
 
 ---
 
-### Configuration (`utils/config/`)
+### Configuration (`nepali_rag/config/`)
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 

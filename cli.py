@@ -15,7 +15,7 @@ def _setup_logging(verbose: bool = False):
 def cmd_ingest(args):
     """Ingest a document through the full pipeline (load, normalize, chunk, embed, index)."""
     _setup_logging(args.verbose)
-    from utils.pipeline.document_pipeline import DocumentPipeline
+    from nepali_rag.pipeline.document_pipeline import DocumentPipeline
 
     kwargs = {}
     if args.collection:
@@ -36,17 +36,17 @@ def cmd_ingest(args):
 def cmd_query(args):
     """Run the full RAG chain and print the answer."""
     _setup_logging(args.verbose)
-    from utils.config.settings import settings
-    from utils.retrieval.retriever import Retriever
-    from utils.vectorstore.qdrant_store import QdrantStore
-    from utils.rag.chain import RAGChain
+    from nepali_rag.config.settings import settings
+    from nepali_rag.retrieval.retriever import Retriever
+    from nepali_rag.vectorstore.qdrant_store import QdrantStore
+    from nepali_rag.rag.chain import RAGChain
 
     collection = args.collection or settings.collection_name
 
     llm = None
     if not args.test:
         try:
-            from utils.llm.base import get_llm
+            from nepali_rag.llm.base import get_llm
             llm_kwargs = {}
             if args.provider:
                 llm_kwargs["provider"] = args.provider
@@ -89,7 +89,7 @@ def cmd_serve(args):
         sys.exit(1)
 
     uvicorn.run(
-        "api.main:app",
+        "nepali_rag.api.main:app",
         host=args.host,
         port=args.port,
         reload=args.reload,

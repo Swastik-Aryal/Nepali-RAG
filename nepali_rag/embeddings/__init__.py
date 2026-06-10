@@ -1,0 +1,1 @@
+from nepali_rag.embeddings.embedding_model import NepaliEmbeddingModel

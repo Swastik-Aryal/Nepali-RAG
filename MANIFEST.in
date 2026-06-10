@@ -1,6 +1,5 @@
 include LICENSE
 include README.md
 include .env.example
-recursive-include api *.py
-recursive-include utils *.py *.json
+recursive-include nepali_rag *.py *.json
 include cli.py

@@ -103,8 +103,8 @@ nepali-rag = "cli:main"
 py-modules = ["cli"]
 
 [tool.setuptools.packages.find]
-include = ["api*", "utils*"]
-exclude = ["utils.tests*", "utils.data*"]
+include = ["nepali_rag*"]
+exclude = ["nepali_rag.tests*", "nepali_rag.data*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.txt", "*.md"]
@@ -117,5 +117,5 @@ line-length = 100
 select = ["E", "F", "I", "W"]
 
 [tool.pytest.ini_options]
-testpaths = ["utils/tests"]
+testpaths = ["nepali_rag/tests"]
 pythonpath = ["."]
