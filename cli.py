@@ -117,7 +117,15 @@ def cmd_query(args):
 def cmd_serve(args):
     """Start the FastAPI server."""
     _setup_logging(args.verbose)
+    from pathlib import Path
+    from dotenv import load_dotenv
     import uvicorn
+
+    env_path = Path(args.env_file)
+    if not env_path.is_file():
+        print(f"Warning: env file not found at '{env_path.resolve()}', server will use defaults.", file=sys.stderr)
+    else:
+        load_dotenv(env_path, override=True)
 
     uvicorn.run(
         "nepali_rag.api.main:app",
@@ -169,6 +177,7 @@ def main():
 
     # serve 
     p_serve = subparsers.add_parser("serve", help="start the FastAPI server")
+    p_serve.add_argument("--env-file", default=".env", help="path to .env file (default: .env in CWD)")
     p_serve.add_argument("--host", default="0.0.0.0", help="bind address (default: 0.0.0.0)")
     p_serve.add_argument("--port", type=int, default=8080, help="port (default: 8080)")
     p_serve.add_argument("--reload", action="store_true", help="enable auto-reload for development")

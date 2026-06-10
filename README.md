@@ -47,7 +47,7 @@ For the Python usage (less control snippets), the library reads settings from a 
 cp .env.example .env
 ```
 
-> **Important:** The `.env` file is loaded from your **current working directory** (CWD). Run your scripts from the project root, or from any directory that contains the `.env` file.
+> **Important:** For Python scripts, the `.env` file is loaded from your **current working directory** (CWD). For the API server, you can point to any `.env` file with `nepali-rag serve --env-file /path/to/.env`.
 
 At minimum, set your Qdrant connection and LLM provider:
 
@@ -247,12 +247,16 @@ nepali-rag query "नेपालको संविधानमा के ल�
 **Terminal:**
 
 ```bash
+# Uses .env from CWD by default
 nepali-rag serve --host 0.0.0.0 --port 8080 --reload -v
+
+# Point to a .env file anywhere on disk
+nepali-rag serve --env-file /path/to/.env --port 8080 -v
 ```
 
 The API will be available at `http://localhost:8080`. Interactive docs at `http://localhost:8080/docs`.
 
-> **Note:** The API server reads configuration from `.env` since it manages multiple requests. Make sure you have a `.env` file in your CWD when running the server.
+> **Note:** The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
 
 ## Configuration
 
@@ -376,6 +380,7 @@ nepali-rag query "<question>"
     -v                        enable debug logging
 
 nepali-rag serve
+    --env-file PATH           path to .env file (default: .env in CWD)
     --host HOST               bind address (default: 0.0.0.0)
     --port PORT               port (default: 8080)
     --reload                  auto-reload for development
