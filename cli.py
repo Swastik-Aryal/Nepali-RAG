@@ -101,6 +101,7 @@ def cmd_query(args):
         question=args.question,
         conversation_history=conversation_history,
         top_k_retrieval=args.top_k,
+        top_k_rerank=args.top_r,
     )
 
     print(result["answer"])
@@ -160,6 +161,7 @@ def main():
     p_query.add_argument("--llm-base-url", default=None, help="base URL for the LLM server (for vllm, ollama, hf)")
     p_query.add_argument("--temperature", type=float, default=0.3, help="LLM temperature (default: 0.3)")
     p_query.add_argument("--top-k", type=int, default=20, help="number of retrieval candidates (default: 20)")
+    p_query.add_argument("--top-r", type=int, default=5, help="number of rerank candidates (default: 5)")
     p_query.add_argument("--history", default=None, help="conversation history as a JSON file path or inline JSON string")
     p_query.add_argument("--test", action="store_true", help="test mode (no LLM, returns raw prompt)")
     p_query.add_argument("--disable-tools", action="store_false", dest="tools", default=True, help="disable tool-calling mode")

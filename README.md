@@ -159,7 +159,7 @@ llm = get_llm(provider="gemini", model="gemini-2.5-flash", api_key="your-google-
 chain = RAGChain(retriever=retriever, llm=llm, use_tools=True)
 
 # First question
-result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?", top_k_retrieval=20)
+result = chain.run(question="नेपालको संविधानमा के लेखिएको छ?", top_k_retrieval=20, top_k_rerank=5)
 print(result["answer"])
 
 # Follow-up with conversation history (only the current question is used for retrieval)
@@ -171,6 +171,7 @@ follow_up = chain.run(
     question="त्यसको बारेमा थप विस्तारमा बताउनुहोस्",
     conversation_history=history,
     top_k_retrieval=20,
+    top_k_rerank=5
 )
 print(follow_up["answer"])
 ```
@@ -197,6 +198,7 @@ nepali-rag query "नेपालको संविधानमा के ल�
   --provider ollama \
   --model gemma3:4b \
   --top-k 20 \
+  --top-r 5 \
   --temperature 0.3 \
   -v
 ```
@@ -367,6 +369,7 @@ nepali-rag query "<question>"
     --llm-base-url URL        base URL for LLM server (for vllm, ollama, hf)
     --temperature FLOAT       LLM temperature (default: 0.3)
     --top-k N                 retrieval candidates (default: 20)
+    --top-r N                 rerank candidates (default: 5)
     --history FILE_OR_JSON    conversation history (JSON file path or inline JSON string)
     --test                    test mode (no LLM, returns raw prompt)
     --disable-tools           disable tool-calling mode (forces retrieval on every query)
