@@ -1,12 +1,17 @@
+"""Ollama LLM provider for local model inference."""
+
 from langchain_core.language_models import BaseChatModel
 from nepali_rag.config.settings import settings
 
 
 def get_ollama_llm(**kwargs) -> BaseChatModel:
-    """Connect to a local Ollama server via langchain-ollama.
+    """Return a ``ChatOllama`` instance pointed at a local Ollama server.
 
-    Ollama runs models locally and exposes a REST API on port 11434.
-    No API key is required. Pull a model first with `ollama pull <model>`.
+    No API key required. Pull the model first with ``ollama pull <model>``.
+
+    Kwargs default to settings: ``model`` (``settings.ollama_model``, ``gemma3:4b``),
+    ``base_url`` (``settings.ollama_base_url``, ``http://localhost:11434``),
+    ``temperature`` (``settings.llm_temperature``, 0.3).
     """
     try:
         from langchain_ollama import ChatOllama

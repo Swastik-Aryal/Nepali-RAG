@@ -1,3 +1,9 @@
+"""PDF OCR extraction using PyMuPDF rendering and Tesseract.
+
+Pages are rasterized at 300 DPI before OCR with languages from
+``settings.tesseract_languages`` (``nep``).
+"""
+
 import fitz
 from PIL import Image
 import pytesseract
@@ -9,9 +15,14 @@ from nepali_rag.ingestion.models import PageResult
 
 
 def ocr_page(file_path: str, page_number: int) -> PageResult:
-    """Run Tesseract OCR on a single page of a PDF at 300 DPI.
+    """OCR a single PDF page at 300 DPI.
 
-    page_number is 1-indexed. Returns a PageResult with extraction_method="ocr".
+    Args:
+        file_path: Path to the PDF file.
+        page_number: 1-indexed page number.
+
+    Returns:
+        ``PageResult`` with ``extraction_method="ocr"``.
     """
     file_path = str(Path(file_path).resolve())
 
@@ -40,9 +51,10 @@ def ocr_page(file_path: str, page_number: int) -> PageResult:
 
 
 def ocr_all_pages(file_path: str) -> list[PageResult]:
-    """Run Tesseract OCR on every page of a PDF at 300 DPI.
+    """OCR every page of a PDF at 300 DPI.
 
-    Returns a list of PageResult with extraction_method="ocr" for all pages.
+    Returns:
+        List of ``PageResult`` objects (one per page), each with ``extraction_method="ocr"``.
     """
     file_path = str(Path(file_path).resolve())
     results = []

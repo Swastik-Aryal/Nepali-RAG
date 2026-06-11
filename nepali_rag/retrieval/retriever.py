@@ -13,6 +13,7 @@ class Retriever:
         store: QdrantStore = None,
         reranker: Reranker = None,
     ):
+        """Wire up embedding model, vector store, and reranker (defaults from config/settings.py)."""
         self.embedding_model = embedding_model or NepaliEmbeddingModel()
         self.store = store or QdrantStore()
         self.reranker = reranker or Reranker()
@@ -23,19 +24,18 @@ class Retriever:
         top_k_retrieval: int = None,
         top_k_rerank: int = None,
     ) -> list[dict]:
-        """Run the full two-stage retrieval pipeline.
+        """Retrieve and rerank passages for a query.
 
-        Stage 1: Hybrid search (dense + sparse) retrieves a broad candidate set.
-        Stage 2: Cross-encoder reranker scores each candidate for precision.
+        Stage 1: hybrid dense + sparse search in Qdrant.
+        Stage 2: cross-encoder reranking for precision.
 
         Args:
-            query: the user's search query.
-            top_k_retrieval: number of candidates from hybrid search (default from settings).
-            top_k_rerank: number of final results after reranking (default from settings).
+            query: User search query.
+            top_k_retrieval: Hybrid-search candidate count (default ``settings.top_k_retrieval``, 20).
+            top_k_rerank: Final result count (default ``settings.top_k_rerank``, 5).
 
         Returns:
-            List of result dicts, each containing:
-                text, metadata, score (hybrid), rerank_score.
+            List of dicts with ``text``, ``metadata``, ``score`` (hybrid), and ``rerank_score``.
         """
         if top_k_retrieval is None:
             top_k_retrieval = settings.top_k_retrieval

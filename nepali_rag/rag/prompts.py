@@ -60,17 +60,16 @@ RETRIEVAL_TOOL_DEFINITION = {
 
 
 def format_context(retrieved_results: list[dict]) -> str:
-    """Format retrieved chunks into a numbered context string for the LLM.
+    """Format retrieved chunks as numbered context for the LLM prompt.
 
-    Each chunk is labeled with its index, source filename, and page number
-    so the LLM can reference them in citations.
+    Each chunk is labeled ``[n] (Source: …, Page: …)`` for citation.
 
     Args:
         retrieved_results: list of result dicts from the retriever,
             each containing 'text' and 'metadata' keys.
 
     Returns:
-        A formatted string with all chunks numbered sequentially.
+        A formatted string with all chunks numbered sequentially from 1.
     """
     parts = []
     for i, result in enumerate(retrieved_results, start=1):

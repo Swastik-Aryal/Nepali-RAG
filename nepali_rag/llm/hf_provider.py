@@ -1,12 +1,18 @@
+"""Hugging Face Inference API LLM provider."""
+
 from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
 from nepali_rag.config.settings import settings
 
 
 def get_hf_llm(**kwargs) -> BaseChatModel:
-    """Connect to the HF API directly (Llama, etc.).
+    """Return a ``ChatOpenAI`` client for the Hugging Face router API.
 
-    Requires the HF_TOKEN environment variable to be set.
+    Requires ``HF_TOKEN`` in ``.env`` or ``api_key`` kwarg.
+
+    Kwargs default to settings: ``model`` (``settings.hf_model_name``, ``Qwen/Qwen3.6-35B-A3B``),
+    ``base_url`` (``settings.hf_base_url``, ``https://router.huggingface.co/v1``),
+    ``temperature`` (``settings.llm_temperature``, 0.3).
     """
     api_key = kwargs.get("api_key", settings.hf_token)
     if not api_key:

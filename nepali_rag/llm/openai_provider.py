@@ -1,12 +1,17 @@
+"""OpenAI API LLM provider."""
+
 from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
 from nepali_rag.config.settings import settings
 
 
 def get_openai_llm(**kwargs) -> BaseChatModel:
-    """Connect to the OpenAI API directly (GPT-4o, etc.).
+    """Return a ``ChatOpenAI`` instance for the OpenAI API.
 
-    Requires the OPENAI_API_KEY environment variable to be set.
+    Requires ``OPENAI_API_KEY`` in ``.env`` or ``api_key`` kwarg.
+
+    Kwargs default to settings: ``model`` (``settings.openai_model``, ``gpt-4o-mini``),
+    ``temperature`` (``settings.llm_temperature``, 0.3).
     """
     api_key = kwargs.get("api_key", settings.openai_api_key)
     if not api_key:

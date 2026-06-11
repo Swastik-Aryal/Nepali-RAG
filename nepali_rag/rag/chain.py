@@ -41,6 +41,14 @@ class RAGChain:
     """
 
     def __init__(self, retriever: Retriever = None, llm=None, use_tools: bool = True):
+        """Wire up retriever and LLM.
+
+        Args:
+            retriever: Hybrid-search retriever (default: new ``Retriever``).
+            llm: LangChain chat model from ``get_llm``. ``None`` enables test mode.
+            use_tools: If ``True`` (default, matches ``settings.use_tools``), the LLM
+                decides whether to retrieve; if ``False``, every query retrieves.
+        """
         self.retriever = retriever or Retriever()
         self.llm = llm
         self.use_tools = use_tools
@@ -70,8 +78,8 @@ class RAGChain:
                         {"role": "user", "content": "What is the capital of Nepal?"},
                         {"role": "assistant", "content": "The capital of Nepal is Kathmandu."},
                     ]
-            top_k_retrieval: override for number of hybrid search candidates.
-            top_k_rerank: override for number of final reranked results.
+            top_k_retrieval: Hybrid-search candidate count (default ``settings.top_k_retrieval``, 20).
+            top_k_rerank: Final result count (default ``settings.top_k_rerank``, 5).
 
         Returns:
             A dict with keys:

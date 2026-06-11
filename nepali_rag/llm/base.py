@@ -19,10 +19,11 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
     interact with the standard LangChain chat model interface.
 
     Args:
-        provider: one of "vllm", "hf","openai", "gemini", "ollama". Falls back to the
-            LLM_PROVIDER setting if not specified.
-        **kwargs: forwarded to the provider constructor. Common keys:
-            model, temperature, api_key, base_url.
+        provider: One of ``vllm``, ``hf``, ``openai``, ``gemini``, ``ollama``.
+            Defaults to ``settings.llm_provider`` (``ollama``).
+        **kwargs: Forwarded to the provider factory. Common keys: ``model``,
+            ``temperature`` (default ``settings.llm_temperature``, 0.3),
+            ``api_key``, ``base_url``.
 
     Returns:
         A configured BaseChatModel instance.

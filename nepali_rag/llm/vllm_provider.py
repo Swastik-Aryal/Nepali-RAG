@@ -1,13 +1,18 @@
+"""vLLM LLM provider via an OpenAI-compatible local endpoint."""
+
 from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
 from nepali_rag.config.settings import settings
 
 
 def get_vllm_llm(**kwargs) -> BaseChatModel:
-    """Connect to a local vLLM server via LangChain's ChatOpenAI.
+    """Return a ``ChatOpenAI`` client pointed at a local vLLM ``/v1`` server.
 
-    vLLM exposes an OpenAI-compatible /v1 endpoint, so ChatOpenAI works
-    directly when pointed at the local server. No API key is required.
+    No API key required.
+
+    Kwargs default to settings: ``model`` (``settings.vllm_model``, ``google/gemma-3-4b-it``),
+    ``base_url`` (``settings.vllm_base_url``, ``http://localhost:8000/v1``),
+    ``temperature`` (``settings.llm_temperature``, 0.3).
     """
     return ChatOpenAI(
         model=kwargs.get("model", settings.vllm_model),

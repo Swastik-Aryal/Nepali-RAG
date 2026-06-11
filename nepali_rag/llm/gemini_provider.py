@@ -1,12 +1,16 @@
+"""Google Gemini LLM provider."""
+
 from langchain_core.language_models import BaseChatModel
 from nepali_rag.config.settings import settings
 
 
 def get_gemini_llm(**kwargs) -> BaseChatModel:
-    """Connect to Google Gemini via langchain-google-genai.
+    """Return a ``ChatGoogleGenerativeAI`` instance for Google Gemini.
 
-    Requires the GOOGLE_API_KEY environment variable to be set.
-    Also used by the RAGAS evaluation module as the judge LLM.
+    Requires ``GOOGLE_API_KEY`` in ``.env`` or ``api_key`` kwarg.
+
+    Kwargs default to settings: ``model`` (``settings.gemini_model``, ``gemini-2.5-flash``),
+    ``temperature`` (``settings.llm_temperature``, 0.3).
     """
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI

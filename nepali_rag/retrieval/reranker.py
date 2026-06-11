@@ -3,9 +3,10 @@ from nepali_rag.config.settings import settings
 
 
 class Reranker:
-    """Cross-encoder reranker for second-stage retrieval precision."""
+    """Scores (query, passage) pairs with a CrossEncoder model."""
 
     def __init__(self, model_name: str = None):
+        """Load reranker model. Defaults to ``settings.reranker_model`` (``cross-encoder/mmarco-mMiniLMv2-L12-H384-v1``)."""
         if model_name is None:
             model_name = settings.reranker_model
         self.model = CrossEncoder(model_name)
@@ -16,12 +17,12 @@ class Reranker:
         results: list[dict],
         top_k: int = None,
     ) -> list[dict]:
-        """Score each (query, passage) pair and return top_k sorted by rerank score.
+        """Rerank hybrid-search candidates by cross-encoder relevance score.
 
         Args:
-            query: the user query string.
-            results: list of dicts, each must have a 'text' key.
-            top_k: how many results to return after reranking.
+            query: User search query.
+            results: Candidate dicts from hybrid search; each must have a ``text`` key.
+            top_k: Number of results to return (default ``settings.top_k_rerank``, 5).
 
         Returns:
             Reranked list of result dicts, each with an added 'rerank_score' key.

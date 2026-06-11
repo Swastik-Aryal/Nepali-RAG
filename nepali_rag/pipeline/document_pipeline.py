@@ -1,3 +1,5 @@
+"""End-to-end document indexing pipeline: load → normalize → chunk → embed → store."""
+
 import uuid
 import logging
 
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentPipeline:
-    """Orchestrates ingestion, preprocessing, chunking, and indexing for uploaded documents."""
+    """Runs the full ingest-to-index flow for one or more uploaded documents."""
 
     def __init__(
         self,
@@ -22,6 +24,13 @@ class DocumentPipeline:
         chunk_size: int = None,
         chunk_overlap_sentences: int = None,
     ):
+        """Configure pipeline dependencies and chunking parameters.
+
+        ``chunk_size`` defaults to ``settings.chunk_size`` (256).
+        ``chunk_overlap_sentences`` defaults to ``settings.chunk_overlap_sentences`` (2).
+        If ``collection_name`` is omitted, a random ``doc_<hex>`` name is generated
+        on first access to ``vector_store``.
+        """
         self.chunk_size = chunk_size or settings.chunk_size
         self.chunk_overlap_sentences = chunk_overlap_sentences or settings.chunk_overlap_sentences
         self.collection_name = collection_name
@@ -30,12 +39,14 @@ class DocumentPipeline:
 
     @property
     def embedding_model(self) -> NepaliEmbeddingModel:
+        """Lazily create the embedding model on first use."""
         if self._embedding_model is None:
             self._embedding_model = NepaliEmbeddingModel()
         return self._embedding_model
 
     @property
     def vector_store(self) -> QdrantStore:
+        """Lazily create the Qdrant store for the configured collection."""
         if self._vector_store is None:
             name = self.collection_name or f"doc_{uuid.uuid4().hex[:12]}"
             self.collection_name = name
@@ -43,10 +54,14 @@ class DocumentPipeline:
         return self._vector_store
 
     def ingest(self, file_path: str) -> dict:
-        """Run the full pipeline for a single file: load, normalize, chunk, embed, index.
+        """Index a single file through load → normalize → chunk → embed → Qdrant.
 
-        Returns a summary dict with collection_name, filename, pages_extracted,
-        chunks_created, and chunks_indexed.
+        Args:
+            file_path: Path to a document supported by ``load_document``.
+
+        Returns:
+            Summary dict with ``collection_name``, ``filename``, ``pages_extracted``,
+            ``chunks_created``, and ``chunks_indexed``.
         """
         logger.info("Loading document: %s", file_path)
         pages = load_document(file_path)
@@ -94,7 +109,11 @@ class DocumentPipeline:
         }
 
     def ingest_batch(self, file_paths: list[str]) -> list[dict]:
-        """Process multiple files sequentially through the full pipeline."""
+        """Run ``ingest`` sequentially for each path.
+
+        Returns:
+            List of summary dicts, one per file in the same order as *file_paths*.
+        """
         results = []
         for path in file_paths:
             result = self.ingest(path)

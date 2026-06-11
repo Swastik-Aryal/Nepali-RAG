@@ -27,7 +27,7 @@ CONVERSATIONS_DIR = Path(__file__).resolve().parent / "conversations"
 
 
 def _load_conversation(conversation_id: str) -> list[dict]:
-    """Load conversation history from a JSON file, or return empty list."""
+    """Load turn history from ``api/conversations/<conversation_id>.json``, or ``[]`` if missing."""
     path = CONVERSATIONS_DIR / f"{conversation_id}.json"
     if not path.exists():
         return []
@@ -36,7 +36,7 @@ def _load_conversation(conversation_id: str) -> list[dict]:
 
 
 def _save_conversation(conversation_id: str, history: list[dict]) -> None:
-    """Save conversation history to a JSON file."""
+    """Persist conversation turn history to ``api/conversations/<conversation_id>.json``."""
     CONVERSATIONS_DIR.mkdir(parents=True, exist_ok=True)
     path = CONVERSATIONS_DIR / f"{conversation_id}.json"
     with open(path, "w", encoding="utf-8") as f:
@@ -51,12 +51,14 @@ async def upload_documents(
     chunk_size: int | None = Form(default=None),
     chunk_overlap_sentences: int | None = Form(default=None),
 ):
-    """Upload one or more documents for ingestion into the vector store.
+    """Upload and index one or more documents via ``DocumentPipeline``.
 
-    Accepts multipart file uploads. Each file is validated against the
-    supported format list, processed through the full DocumentPipeline
-    (load, normalize, chunk, embed, index), and the temp files are
-    cleaned up afterward.
+    Multipart form fields:
+        ``collection_name``: Qdrant collection (auto-generated if omitted).
+        ``chunk_size``: Max tokens per chunk (default ``settings.chunk_size``, 256).
+        ``chunk_overlap_sentences``: Sentence overlap (default ``settings.chunk_overlap_sentences``, 2).
+
+    Each file is validated against ``SUPPORTED_FORMATS``, indexed, then temp files are removed.
     """
     from nepali_rag.pipeline.document_pipeline import DocumentPipeline
 
@@ -115,13 +117,22 @@ async def upload_documents(
 
 @router.post("/query", response_model=QueryResponse)
 async def query_documents(request: Request, body: QueryRequest):
-    """Query the RAG pipeline with a question and optional conversation history.
+    """Run RAG query: retrieve, generate answer, persist conversation.
 
-    Conversation persistence: each query is tied to a conversation_id. If not
-    provided, a new one is generated. The conversation file in nepali_rag/api/conversations/
-    tracks the full history. If the caller sends an explicit conversation_history,
-    the file is overwritten with that history plus the new turn. Otherwise the
-    existing file history is loaded and appended to.
+    Body defaults (when field omitted):
+        ``collection_name``: ``settings.collection_name`` (``nepali_docs``)
+        ``top_k_retrieval``: ``settings.top_k_retrieval`` (20)
+        ``top_k_rerank``: ``settings.top_k_rerank`` (5)
+        ``use_tools``: ``settings.use_tools`` (``True``)
+        ``llm_provider``: ``settings.llm_provider`` (``ollama``)
+        ``temperature``: ``settings.llm_temperature`` (0.3)
+
+    Conversation: tied to ``conversation_id`` (auto-generated if omitted).
+    History is stored in ``api/conversations/<conversation_id>.json``. Explicit
+    ``conversation_history`` in the body replaces the file; otherwise the
+    file is loaded and the new turn appended.
+
+    Falls back to test mode (prompt only, no LLM) if the provider is unreachable.
     """
     from nepali_rag.retrieval.retriever import Retriever
     from nepali_rag.vectorstore.qdrant_store import QdrantStore
@@ -230,7 +241,7 @@ async def query_documents(request: Request, body: QueryRequest):
 
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Return system health and component availability."""
+    """Return API status, configured LLM provider, and whether the LLM is reachable."""
     from nepali_rag.llm.base import get_llm
 
     llm_available = False
@@ -251,7 +262,7 @@ async def health_check():
 
 @router.get("/collections", response_model=list[CollectionInfo])
 async def list_collections():
-    """List all Qdrant collections with their point counts."""
+    """List all Qdrant collections (connects via ``settings.qdrant_url``, ``settings.qdrant_api_key``)."""
     from qdrant_client import QdrantClient
 
     try:
@@ -276,7 +287,7 @@ async def list_collections():
 
 @router.get("/collections/{name}", response_model=CollectionInfo)
 async def get_collection(name: str):
-    """Get detailed info for a specific Qdrant collection."""
+    """Return point count and status for a single Qdrant collection by name."""
     from qdrant_client import QdrantClient
 
     try:

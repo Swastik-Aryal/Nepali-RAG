@@ -1,3 +1,8 @@
+"""Text normalization and language detection for Nepali documents.
+
+Cleans OCR and copy-paste artifacts before chunking and embedding.
+"""
+
 import unicodedata
 import re
 
@@ -10,7 +15,7 @@ MULTI_NEWLINES = re.compile(r"\n{3,}")
 
 
 def normalize_text(text: str) -> str:
-    """Normalize Nepali text for consistent representation.
+    """Normalize text for consistent chunking and embedding.
 
     Operations applied in order:
     1. Unicode NFC normalization
@@ -27,11 +32,7 @@ def normalize_text(text: str) -> str:
 
 
 def is_nepali_text(text: str) -> bool:
-    """Check whether a string is primarily Devanagari.
-
-    Returns True if more than 30% of characters fall in the
-    Devanagari Unicode range (U+0900 to U+097F).
-    """
+    """Return True if >30% of non-whitespace characters are Devanagari (U+0900–U+097F)."""
     if not text:
         return False
 

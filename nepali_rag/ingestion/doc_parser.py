@@ -1,3 +1,9 @@
+"""Format-specific parsers for non-PDF document ingestion.
+
+Each loader returns ``PageResult`` objects: one page for single-unit formats,
+or one per slide/sheet/chapter for multi-unit formats.
+"""
+
 import csv
 import io
 from pathlib import Path
@@ -6,7 +12,7 @@ from nepali_rag.ingestion.models import PageResult
 
 
 def load_docx(file_path: str) -> list[PageResult]:
-    """Extract text from a .docx file. Each paragraph is concatenated into a single page."""
+    """Extract paragraphs from a Word ``.docx`` file as a single page."""
     from docx import Document
 
     doc = Document(file_path)
@@ -22,7 +28,7 @@ def load_docx(file_path: str) -> list[PageResult]:
 
 
 def load_pptx(file_path: str) -> list[PageResult]:
-    """Extract text from a .pptx file. Each slide becomes a separate page."""
+    """Extract text from a PowerPoint ``.pptx`` file; one page per slide."""
     from pptx import Presentation
 
     prs = Presentation(file_path)
@@ -48,7 +54,7 @@ def load_pptx(file_path: str) -> list[PageResult]:
 
 
 def load_xlsx(file_path: str) -> list[PageResult]:
-    """Extract text from a .xlsx file. Each sheet becomes a separate page."""
+    """Extract tabular text from an Excel ``.xlsx`` file; one page per sheet."""
     from openpyxl import load_workbook
 
     wb = load_workbook(file_path, read_only=True, data_only=True)
@@ -75,7 +81,7 @@ def load_xlsx(file_path: str) -> list[PageResult]:
 
 
 def load_csv_file(file_path: str) -> list[PageResult]:
-    """Extract text from a .csv file as a single page."""
+    """Extract rows from a ``.csv`` file as a single page (tab-separated cells)."""
     path = Path(file_path).resolve()
 
     with open(path, "r", encoding="utf-8", errors="replace") as f:
@@ -94,7 +100,7 @@ def load_csv_file(file_path: str) -> list[PageResult]:
 
 
 def load_rtf(file_path: str) -> list[PageResult]:
-    """Extract text from a .rtf file as a single page."""
+    """Extract plain text from an RTF file as a single page."""
     from striprtf.striprtf import rtf_to_text
 
     path = Path(file_path).resolve()
@@ -110,7 +116,7 @@ def load_rtf(file_path: str) -> list[PageResult]:
 
 
 def load_html(file_path: str) -> list[PageResult]:
-    """Extract text from an .html/.htm file as a single page."""
+    """Extract visible text from an HTML file (strips scripts/styles) as a single page."""
     from bs4 import BeautifulSoup
 
     path = Path(file_path).resolve()
@@ -133,7 +139,7 @@ def load_html(file_path: str) -> list[PageResult]:
 
 
 def load_epub(file_path: str) -> list[PageResult]:
-    """Extract text from an .epub file. Each chapter/item becomes a separate page."""
+    """Extract text from an EPUB ebook; one page per non-empty document item."""
     import ebooklib
     from ebooklib import epub
     from bs4 import BeautifulSoup
@@ -161,7 +167,7 @@ def load_epub(file_path: str) -> list[PageResult]:
 
 
 def load_odt(file_path: str) -> list[PageResult]:
-    """Extract text from an .odt file as a single page."""
+    """Extract paragraphs from an OpenDocument ``.odt`` file as a single page."""
     from odf import text as odf_text
     from odf.opendocument import load as odf_load
 

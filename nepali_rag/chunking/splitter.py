@@ -1,3 +1,17 @@
+"""Chunking utilities for splitting Nepali documents into token-limited segments.
+
+Provides a two-level splitting pipeline:
+
+1. **Structural split** — uses paragraph/line separators to keep logical sections
+   intact, then trims each block to end on a sentence boundary.
+2. **Sentence-level split** — breaks oversized blocks at Nepali sentence
+   delimiters (purna viram ``।``, double danda ``॥``, ``!``, ``?``, ``.``) with
+   configurable sentence overlap between consecutive chunks.
+
+Token counting uses the HuggingFace tokenizer for the configured embedding model
+to ensure chunks stay within the model's context window.
+"""
+
 import re
 from transformers import AutoTokenizer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -9,6 +23,7 @@ SENTENCE_DELIMITERS = re.compile(r"([।॥!?.])")
 
 
 def _count_tokens(text: str) -> int:
+    """Return the number of tokens in *text* using the embedding model's tokenizer."""
     return len(_tokenizer.encode(text, add_special_tokens=False))
 
 
@@ -43,7 +58,14 @@ def _force_split(text: str, max_tokens: int) -> list[str]:
 
 
 def _sentence_chunk(text: str, max_tokens: int, overlap_sentences: int) -> list[dict]:
-    """Level 2: Split text into chunks at sentence boundaries with greedy accumulation."""
+    """Split text into chunks at sentence boundaries (Level 2).
+
+    Greedily accumulates sentences until *max_tokens* is reached, then starts
+    a new chunk with *overlap_sentences* carried over for continuity.
+
+    Returns:
+        List of dicts with keys ``text``, ``token_count``, and ``has_overlap``.
+    """
     sentences = _split_sentences(text)
     if not sentences:
         if not text.strip():
@@ -127,7 +149,11 @@ def _sentence_chunk(text: str, max_tokens: int, overlap_sentences: int) -> list[
 
 
 def _merge_small_blocks(blocks: list[str], min_tokens: int, max_tokens: int) -> list[str]:
-    """Merge blocks smaller than min_tokens with their neighbor."""
+    """Merge undersized blocks with their next neighbor to avoid tiny fragments.
+
+    Blocks below *min_tokens* are concatenated with the following block,
+    as long as the combined result stays within *max_tokens*.
+    """
     if not blocks:
         return blocks
 
@@ -229,18 +255,21 @@ def chunk_pages(
     """Split preprocessed pages into token-limited chunks.
 
     Two-level process:
-    Level 1: RecursiveCharacterTextSplitter uses structural separators (\\n\\n, \\n)
+    Level 1: RecursiveCharacterTextSplitter uses structural separators (\n\n, \n)
              to keep paragraphs/sections intact, then a sentence-boundary pass
              ensures every block ends on a complete sentence.
-    Level 2: Oversized blocks are split at sentence boundaries (purna viram).
+    Level 2: Oversized blocks are split at sentence boundaries.
 
     Args:
-        pages: list of PageResult objects (from ingestion).
-        chunk_size: max tokens per chunk (default from settings).
-        overlap_sentences: number of overlap sentences between chunks (default from settings).
+        pages: List of PageResult objects (from ingestion).
+        chunk_size: Max tokens per chunk. Defaults to ``settings.chunk_size`` (256).
+        overlap_sentences: Number of sentences to overlap between consecutive
+            chunks. Defaults to ``settings.chunk_overlap_sentences`` (2).
 
     Returns:
-        List of chunk dicts with 'text' and 'metadata' keys.
+        List of chunk dicts, each with ``'text'`` (str) and ``'metadata'`` (dict)
+        keys. Metadata includes ``source``, ``page_number``, ``chunk_index``,
+        ``token_count``, and ``has_overlap``.
     """
     if chunk_size is None:
         chunk_size = settings.chunk_size

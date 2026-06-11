@@ -1,3 +1,9 @@
+"""Qdrant vector store with dense + sparse hybrid search.
+
+Stores chunk embeddings alongside term-frequency sparse vectors for reciprocal
+rank fusion (RRF) at query time. Supports both Latin and Devanagari tokens.
+"""
+
 import uuid
 from collections import defaultdict
 import hashlib
@@ -17,7 +23,7 @@ from nepali_rag.config.settings import settings
 
 
 class QdrantStore:
-    """Qdrant vector store with dense + sparse hybrid search."""
+    """Qdrant client wrapper for chunk upsert and hybrid retrieval."""
 
     def __init__(
         self,
@@ -26,6 +32,11 @@ class QdrantStore:
         api_key: str = None,
         client: QdrantClient = None,
     ):
+        """Connect to Qdrant and ensure the collection exists.
+
+        Uses ``settings.collection_name`` (``nepali_docs``), ``settings.qdrant_url`` (``""``),
+        and ``settings.qdrant_api_key`` (``""``) when arguments are omitted.
+        """
         self.collection_name = collection_name or settings.collection_name
         if client is not None:
             self.client = client
@@ -36,7 +47,7 @@ class QdrantStore:
         self._ensure_collection()
 
     def _ensure_collection(self):
-        """Create the collection if it does not already exist."""
+        """Create the dense (1024-dim cosine) + sparse collection if missing."""
         collections = [c.name for c in self.client.get_collections().collections]
         if self.collection_name in collections:
             return
@@ -52,14 +63,11 @@ class QdrantStore:
         )
 
     def _token_to_index(self, token: str) -> int:
-        """Deterministic token → index using MD5 (stable across runs)."""
+        """Map a token to a stable sparse index via MD5 hashing."""
         return int(hashlib.md5(token.encode("utf-8")).hexdigest(), 16) % (2**20)
 
     def _compute_sparse_vector(self, text: str) -> SparseVector:
-        """
-        Compute a stable term-frequency sparse vector.
-        Works for both Latin and Devanagari script.
-        """
+        """Build a term-frequency sparse vector (whitespace tokenization, any script)."""
         # Basic whitespace split — works for both scripts
         tokens = text.split()
         term_freq: dict[int, float] = defaultdict(float)
@@ -77,15 +85,15 @@ class QdrantStore:
         embeddings,
         batch_size: int = 64,
     ) -> int:
-        """Insert chunks with their dense embeddings and computed sparse vectors.
+        """Upsert chunks with dense embeddings and computed sparse vectors.
 
         Args:
-            chunks: list of chunk dicts with 'text' and 'metadata' keys.
-            embeddings: numpy array or list of dense embedding vectors.
-            batch_size: number of points per upsert batch.
+            chunks: List of dicts with ``text`` and optional ``metadata``.
+            embeddings: Dense vectors aligned with *chunks* (numpy array or list).
+            batch_size: Points per upsert batch (default 64).
 
         Returns:
-            Number of points inserted.
+            Total number of points inserted.
         """
         points = []
         for chunk, dense_vec in zip(chunks, embeddings):
@@ -120,7 +128,11 @@ class QdrantStore:
         return len(points)
 
     def search_dense(self, query_embedding, top_k: int = None) -> list[dict]:
-        """Search using dense vector similarity."""
+        """Cosine similarity search on the dense embedding vector.
+
+        Returns:
+            List of dicts with ``id``, ``score``, ``text``, and ``metadata``.
+        """
         if top_k is None:
             top_k = settings.top_k_retrieval
 
@@ -149,7 +161,11 @@ class QdrantStore:
         ]
 
     def search_sparse(self, query_text: str, top_k: int = None) -> list[dict]:
-        """Search using sparse (keyword) vector similarity."""
+        """Keyword-style search on the sparse term-frequency vector.
+
+        Returns:
+            List of dicts with ``id``, ``score``, ``text``, and ``metadata``.
+        """
         if top_k is None:
             top_k = settings.top_k_retrieval
 
@@ -181,7 +197,18 @@ class QdrantStore:
         dense_weight: float = None,
         sparse_weight: float = None,
     ) -> list[dict]:
-        """Hybrid search combining dense and sparse results via reciprocal rank fusion."""
+        """Fuse dense and sparse rankings with weighted reciprocal rank fusion (RRF).
+
+        Args:
+            query_embedding: Dense query vector from the embedding model.
+            query_text: Raw query string for sparse search.
+            top_k: Number of fused results (default ``settings.top_k_retrieval``, 20).
+            dense_weight: RRF weight for dense results (default ``settings.dense_weight``, 0.9).
+            sparse_weight: RRF weight for sparse results (default ``settings.sparse_weight``, 0.1).
+
+        Returns:
+            Fused list sorted by combined RRF score.
+        """
         if top_k is None:
             top_k = settings.top_k_retrieval
         if dense_weight is None:
@@ -220,11 +247,11 @@ class QdrantStore:
         return combined
 
     def delete_collection(self):
-        """Delete the current collection."""
+        """Drop the configured collection from Qdrant."""
         self.client.delete_collection(collection_name=self.collection_name)
 
     def get_collection_info(self) -> dict:
-        """Return collection status and point count."""
+        """Return collection name, point count, and status."""
         info = self.client.get_collection(collection_name=self.collection_name)
         return {
             "name": self.collection_name,

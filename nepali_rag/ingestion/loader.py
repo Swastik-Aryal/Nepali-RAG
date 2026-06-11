@@ -1,3 +1,10 @@
+"""Document loading entry point for the ingestion pipeline.
+
+Routes files by extension to the appropriate parser. PDFs are always processed
+via Tesseract OCR at 300 DPI with Nepali language support; other formats use
+format-specific extractors that return one or more ``PageResult`` objects.
+"""
+
 import json
 import sys
 import os
@@ -49,14 +56,18 @@ FORMAT_HANDLERS = {
 
 
 def load_document(file_path: str) -> list[PageResult]:
-    """Load a document and extract text from all pages.
+    """Load a document and extract text from all pages/slides/sheets.
 
-    Supported formats: PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, RTF, HTML, EPUB, ODT.
+    Args:
+        file_path: Path to a supported file (``.pdf``, ``.txt``, ``.md``,
+            ``.docx``, ``.pptx``, ``.xlsx``, ``.csv``, ``.rtf``, ``.html``,
+            ``.htm``, ``.epub``, ``.odt``).
 
-    For PDFs, every page is rendered to a 300 DPI image and processed through
-    Tesseract OCR with Nepali language support.
+    Returns:
+        List of ``PageResult`` objects, one per page or logical unit.
 
-    For other formats, uses the appropriate parser library to extract text.
+    Raises:
+        ValueError: If the file extension is not supported.
     """
     path = Path(file_path).resolve()
     suffix = path.suffix.lower()
@@ -77,16 +88,12 @@ def load_document(file_path: str) -> list[PageResult]:
 
 
 def _load_pdf(file_path: str) -> list[PageResult]:
-    """Load a PDF using Tesseract OCR on all pages.
-
-    Every page is rendered to a 300 DPI image and processed through
-    Tesseract OCR, regardless of whether it contains digital text.
-    """
+    """Load a PDF via full-document OCR (300 DPI, Nepali Tesseract)."""
     return ocr_all_pages(file_path)
 
 
 def _load_txt(file_path: str) -> list[PageResult]:
-    """Load a plain text or markdown file as a single page."""
+    """Load a plain-text or Markdown file as a single ``PageResult``."""
     path = Path(file_path)
     text = path.read_text(encoding="utf-8")
 
