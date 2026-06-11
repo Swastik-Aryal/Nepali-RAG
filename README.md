@@ -49,14 +49,13 @@ cp .env.example .env
 
 > **Important:** For Python scripts, the `.env` file is loaded from your **current working directory** (CWD). For the API server, you can point to any `.env` file with `nepali-rag serve --env-file /path/to/.env`.
 
-At minimum, set your Qdrant connection and LLM provider:
+At minimum, set your Qdrant connection:
 
 ```env
 QDRANT_URL=https://your-cluster.cloud.qdrant.io
 QDRANT_API_KEY=your-qdrant-api-key
-LLM_PROVIDER=ollama
-OLLAMA_MODEL=gemma3:4b #or any other model of choice
 ```
+> **Note:** If `.env` file is absent, the library will use the default values set in the [config/settings.py](./nepali-rag/config/settings.py)(can also be viewed in `env.example`) file.
 
 > **Note:** The `.env` file is **not required** for terminal (CLI) usage. All parameters are passed directly as command-line arguments.
 
