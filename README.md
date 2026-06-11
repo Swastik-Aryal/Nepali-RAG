@@ -55,7 +55,7 @@ At minimum, set your Qdrant connection:
 QDRANT_URL=https://your-cluster.cloud.qdrant.io
 QDRANT_API_KEY=your-qdrant-api-key
 ```
-> **Note:** If `.env` file is absent, the library will use the default values set in the [config/settings.py](./nepali-rag/config/settings.py)(can also be viewed in `env.example`) file.
+> **Note:** If `.env` file is absent, the library will use the default values set in the [config/settings.py](./nepali_rag/config/settings.py) (can also be viewed in `env.example`) file.
 
 > **Note:** The `.env` file is **not required** for terminal (CLI) usage. All parameters are passed directly as command-line arguments.
 
