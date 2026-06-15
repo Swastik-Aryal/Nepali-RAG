@@ -14,7 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentPipeline:
-    """Runs the full ingest-to-index flow for one or more uploaded documents."""
+    """Runs the full ingest-to-index flow for one or more uploaded documents.
+
+    Args:
+        - embedding_model (NepaliEmbeddingModel, optional): Pre-initialized embedding model for
+            generating dense vectors. If ``None``, a default ``NepaliEmbeddingModel`` is lazily
+            created on first use. Defaults to ``None``.
+        - vector_store (QdrantStore, optional): Pre-initialized Qdrant vector store for indexing
+            chunks. If ``None``, a default ``QdrantStore`` is lazily created on first use.
+            Defaults to ``None``.
+        - collection_name (str, optional): Qdrant collection name. If omitted, a random
+            ``doc_<hex>`` name is generated on first access to ``vector_store``.
+            Defaults to ``None``.
+        - chunk_size (int, optional): Maximum number of tokens per chunk.
+            Defaults to ``settings.chunk_size`` (256).
+        - chunk_overlap_sentences (int, optional): Number of overlapping sentences between
+            consecutive chunks. Defaults to ``settings.chunk_overlap_sentences`` (2).
+    """
 
     def __init__(
         self,
@@ -26,10 +42,19 @@ class DocumentPipeline:
     ):
         """Configure pipeline dependencies and chunking parameters.
 
-        ``chunk_size`` defaults to ``settings.chunk_size`` (256).
-        ``chunk_overlap_sentences`` defaults to ``settings.chunk_overlap_sentences`` (2).
-        If ``collection_name`` is omitted, a random ``doc_<hex>`` name is generated
-        on first access to ``vector_store``.
+        - embedding_model (NepaliEmbeddingModel, optional): Pre-initialized embedding model for
+            generating dense vectors. If ``None``, a default ``NepaliEmbeddingModel`` is lazily
+            created on first use. Defaults to ``None``.
+        - vector_store (QdrantStore, optional): Pre-initialized Qdrant vector store for indexing
+            chunks. If ``None``, a default ``QdrantStore`` is lazily created on first use.
+            Defaults to ``None``.
+        - collection_name (str, optional): Qdrant collection name. If omitted, a random
+            ``doc_<hex>`` name is generated on first access to ``vector_store``.
+            Defaults to ``None``.
+        - chunk_size (int, optional): Maximum number of tokens per chunk.
+            Defaults to ``settings.chunk_size`` (256).
+        - chunk_overlap_sentences (int, optional): Number of overlapping sentences between
+            consecutive chunks. Defaults to ``settings.chunk_overlap_sentences`` (2).
         """
         self.chunk_size = chunk_size or settings.chunk_size
         self.chunk_overlap_sentences = chunk_overlap_sentences or settings.chunk_overlap_sentences

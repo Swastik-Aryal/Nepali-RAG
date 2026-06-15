@@ -3,6 +3,12 @@ from pathlib import Path
 
 
 class Settings(BaseSettings):
+    """
+    Default settings for the Nepali RAG system.
+    
+    Override default values by creating a ``.env`` file with the desired values.
+    
+    """
     qdrant_url: str = ""
     qdrant_api_key: str = ""
     collection_name: str = "nepali_docs"

@@ -23,7 +23,18 @@ from nepali_rag.config.settings import settings
 
 
 class QdrantStore:
-    """Qdrant client wrapper for chunk upsert and hybrid retrieval."""
+    """Qdrant client wrapper for chunk upsert and hybrid retrieval.
+
+    Args:
+        - collection_name (str, optional): Name of the Qdrant collection to use.
+            Defaults to ``settings.collection_name`` (nepali_docs).
+        - url (str, optional): URL of the Qdrant server.
+            Defaults to ``settings.qdrant_url`` ("").
+        - api_key (str, optional): API key for authenticating with the Qdrant server.
+            Defaults to ``settings.qdrant_api_key`` ("").
+        - client (QdrantClient, optional): A pre-initialized ``QdrantClient`` instance. If
+            provided, ``url`` and ``api_key`` are ignored. Defaults to ``None``.
+    """
 
     def __init__(
         self,
@@ -34,9 +45,17 @@ class QdrantStore:
     ):
         """Connect to Qdrant and ensure the collection exists.
 
-        Uses ``settings.collection_name`` (``nepali_docs``), ``settings.qdrant_url`` (``""``),
-        and ``settings.qdrant_api_key`` (``""``) when arguments are omitted.
+        - collection_name (str, optional): Name of the Qdrant collection to use.
+            Defaults to ``settings.collection_name`` (nepali_docs).
+        - url (str, optional): URL of the Qdrant server.
+            Defaults to ``settings.qdrant_url`` ("").
+        - api_key (str, optional): API key for authenticating with the Qdrant server.
+            Defaults to ``settings.qdrant_api_key`` ("").
+        - client (QdrantClient, optional): A pre-initialized ``QdrantClient`` instance. If
+            provided, ``url`` and ``api_key`` are ignored. Defaults to ``None``.
+
         """
+
         self.collection_name = collection_name or settings.collection_name
         if client is not None:
             self.client = client

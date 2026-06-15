@@ -3,10 +3,20 @@ from nepali_rag.config.settings import settings
 
 
 class Reranker:
-    """Scores (query, passage) pairs with a CrossEncoder model."""
+    """Scores (query, passage) pairs with a CrossEncoder model.
+
+    Args:
+        - model_name (str, optional): Name or path of the cross-encoder model to load.
+            Defaults to ``settings.reranker_model`` (cross-encoder/mmarco-mMiniLMv2-L12-H384-v1).
+    """
 
     def __init__(self, model_name: str = None):
-        """Load reranker model. Defaults to ``settings.reranker_model`` (``cross-encoder/mmarco-mMiniLMv2-L12-H384-v1``)."""
+        """Load reranker model.
+
+        - model_name (str, optional): Name or path of the cross-encoder model to load.
+            Defaults to ``settings.reranker_model`` (cross-encoder/mmarco-mMiniLMv2-L12-H384-v1).
+        
+        """
         if model_name is None:
             model_name = settings.reranker_model
         self.model = CrossEncoder(model_name)

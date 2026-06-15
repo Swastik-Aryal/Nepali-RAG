@@ -22,6 +22,12 @@ def normalize_text(text: str) -> str:
     2. Zero-width character removal
     3. Whitespace normalization (spaces/tabs collapsed, 3+ newlines to 2)
     4. Strip leading/trailing whitespace
+
+    Args:
+        text (str): Text to normalize.
+
+    Returns:
+        str: Normalized text.
     """
     text = unicodedata.normalize("NFC", text)
     text = ZERO_WIDTH_CHARS.sub("", text)
@@ -32,7 +38,14 @@ def normalize_text(text: str) -> str:
 
 
 def is_nepali_text(text: str) -> bool:
-    """Return True if >30% of non-whitespace characters are Devanagari (U+0900–U+097F)."""
+    """Return True if >30% of non-whitespace characters are Devanagari (U+0900–U+097F).
+    
+    Args:
+        text (str): Text to check.
+    
+    Returns:
+        bool: True if text is Nepali, False otherwise.
+    """
     if not text:
         return False
 

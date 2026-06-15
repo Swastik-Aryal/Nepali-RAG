@@ -11,10 +11,20 @@ from nepali_rag.config.settings import settings
 
 
 class NepaliEmbeddingModel:
-    """Wrapper around multilingual-e5-large with mandatory prefix handling and L2 normalization."""
+    """Wrapper around multilingual-e5-large with mandatory prefix handling and L2 normalization.
+
+    Args:
+        - model_name (str, optional): Name or path of the SentenceTransformer model to load.
+            Defaults to ``settings.embedding_model`` (intfloat/multilingual-e5-large).
+    """
 
     def __init__(self, model_name: str = None):
-        """Load the embedding model. Defaults to ``settings.embedding_model`` (``intfloat/multilingual-e5-large``)."""
+        """Load the embedding model. 
+        
+        - model_name (str, optional): Name or path of the SentenceTransformer model to load.
+            Defaults to ``settings.embedding_model`` (``intfloat/multilingual-e5-large``).
+        
+        """
         if model_name is None:
             model_name = settings.embedding_model
         self.model = SentenceTransformer(model_name)

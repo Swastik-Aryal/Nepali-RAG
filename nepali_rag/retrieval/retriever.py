@@ -5,7 +5,17 @@ from nepali_rag.config.settings import settings
 
 
 class Retriever:
-    """Two-stage retrieval: hybrid search followed by cross-encoder reranking."""
+    """Two-stage retrieval: hybrid search followed by cross-encoder reranking.
+
+    Args:
+        - embedding_model (NepaliEmbeddingModel, optional): Pre-initialized embedding model for
+            generating query vectors. If ``None``, a default ``NepaliEmbeddingModel`` is created.
+            Defaults to ``None``.
+        - store (QdrantStore, optional): Pre-initialized Qdrant vector store for hybrid search.
+            If ``None``, a default ``QdrantStore`` is created. Defaults to ``None``.
+        - reranker (Reranker, optional): Pre-initialized cross-encoder reranker. If ``None``, a
+            default ``Reranker`` is created. Defaults to ``None``.
+    """
 
     def __init__(
         self,
@@ -13,7 +23,15 @@ class Retriever:
         store: QdrantStore = None,
         reranker: Reranker = None,
     ):
-        """Wire up embedding model, vector store, and reranker (defaults from config/settings.py)."""
+        """Wire up embedding model, vector store, and reranker.
+        - embedding_model (NepaliEmbeddingModel, optional): Pre-initialized embedding model for
+            generating query vectors. If ``None``, a default ``NepaliEmbeddingModel`` is created.
+            Defaults to ``None``.
+        - store (QdrantStore, optional): Pre-initialized Qdrant vector store for hybrid search.
+            If ``None``, a default ``QdrantStore`` is created. Defaults to ``None``.
+        - reranker (Reranker, optional): Pre-initialized cross-encoder reranker. If ``None``, a
+            default ``Reranker`` is created. Defaults to ``None``.
+        """
         self.embedding_model = embedding_model or NepaliEmbeddingModel()
         self.store = store or QdrantStore()
         self.reranker = reranker or Reranker()

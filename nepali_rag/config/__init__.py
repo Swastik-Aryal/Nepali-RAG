@@ -1,0 +1,1 @@
+from nepali_rag.config.settings import settings

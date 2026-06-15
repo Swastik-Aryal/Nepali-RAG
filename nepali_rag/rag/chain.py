@@ -38,16 +38,31 @@ class RAGChain:
 
     Conversation history is accepted optionally so multi-turn context
     reaches the LLM, but retrieval always uses only the current query.
+
+    Args:
+        - retriever (Retriever, optional): Hybrid-search retriever instance. If ``None``, a
+            default ``Retriever`` is created. Defaults to ``None``.
+        - llm (optional): LangChain chat model obtained from ``get_llm``. ``None`` enables
+            test mode (returns formatted prompts without calling an LLM).
+            Defaults to ``None``.
+        - use_tools (bool, optional): If ``True``, the LLM decides whether to retrieve; if
+            ``False``, every query triggers retrieval.
+            Defaults to ``settings.use_tools`` (True).
     """
 
     def __init__(self, retriever: Retriever = None, llm=None, use_tools: bool = True):
         """Wire up retriever and LLM.
 
         Args:
-            retriever: Hybrid-search retriever (default: new ``Retriever``).
-            llm: LangChain chat model from ``get_llm``. ``None`` enables test mode.
-            use_tools: If ``True`` (default, matches ``settings.use_tools``), the LLM
-                decides whether to retrieve; if ``False``, every query retrieves.
+            - retriever (Retriever, optional): Hybrid-search retriever instance. If ``None``, a
+                default ``Retriever`` is created. Defaults to ``None``.
+            - llm (optional): LangChain chat model obtained from ``get_llm``. ``None`` enables
+                test mode (returns formatted prompts without calling an LLM).
+                Defaults to ``None``.
+            - use_tools (bool, optional): If ``True``, the LLM decides whether to retrieve; if
+                ``False``, every query triggers retrieval.
+                Defaults to ``settings.use_tools`` (True).
+                
         """
         self.retriever = retriever or Retriever()
         self.llm = llm

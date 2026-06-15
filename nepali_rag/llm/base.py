@@ -19,12 +19,27 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
     interact with the standard LangChain chat model interface.
 
     Args:
-        provider: One of ``vllm``, ``hf``, ``openai``, ``gemini``, ``ollama``.
+        - provider: One of ``vllm``, ``hf``, ``openai``, ``gemini``, ``ollama``.
             Defaults to ``settings.llm_provider`` (``ollama``).
-        **kwargs: Forwarded to the provider factory. Common keys: ``model``,
-            ``temperature`` (default ``settings.llm_temperature``, 0.3),
-            ``api_key``, ``base_url``.
-
+        - **kwargs: Forwarded to the provider factory.
+            - Common keys:
+                - ``model``: Default model to use for the LLM.
+                        - default ``settings.vllm_model`` for vllm ("gemma3:4b"),
+                        - default ``settings.hf_model_name`` for hf ("Qwen/Qwen3.6-35B-A3B"),
+                        - default ``settings.openai_model`` for openai ("gpt-4o-mini"),
+                        - default ``settings.gemini_model`` for gemini ("gemini-2.5-flash"),
+                        - default ``settings.ollama_model`` for ollama ("gemma3:4b")
+                - ``temperature``: Default temperature to use for the LLM.
+                        - default ``settings.llm_temperature`` (0.3)
+                - ``api_key``: API key for authenticating with the LLM.
+                        - default ``settings.openai_api_key`` for openai ("")
+                        - default ``settings.google_api_key`` for gemini ("")
+                        - default ``settings.hf_token`` for hf ("")
+                - ``base_url``: Base URL of the LLM.
+                        - default ``settings.vllm_base_url`` for vllm ("http://localhost:8000/v1")
+                        - default ``settings.ollama_base_url`` for ollama ("http://localhost:11434")
+                        - default ``settings.hf_base_url`` for hf ("https://router.huggingface.co/v1")
+    
     Returns:
         A configured BaseChatModel instance.
 

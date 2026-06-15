@@ -59,12 +59,12 @@ def load_document(file_path: str) -> list[PageResult]:
     """Load a document and extract text from all pages/slides/sheets.
 
     Args:
-        file_path: Path to a supported file (``.pdf``, ``.txt``, ``.md``,
+        file_path (str): Path to a supported file (``.pdf``, ``.txt``, ``.md``,
             ``.docx``, ``.pptx``, ``.xlsx``, ``.csv``, ``.rtf``, ``.html``,
             ``.htm``, ``.epub``, ``.odt``).
 
     Returns:
-        List of ``PageResult`` objects, one per page or logical unit.
+        list[PageResult]: List of ``PageResult`` objects, one per page or logical unit.
 
     Raises:
         ValueError: If the file extension is not supported.

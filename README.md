@@ -27,7 +27,7 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
 ```bash
 git clone https://github.com/Swastik-Aryal/Nepali-RAG.git
 cd Nepali-RAG
-pip install -e .
+pip install -e . --config-settings editable_mode=compat
 ```
 
 This installs all dependencies (document parsers, embeddings, vector store, LLM providers, API server).
