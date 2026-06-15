@@ -81,10 +81,10 @@ print(result)
 from nepali_rag import DocumentPipeline, NepaliEmbeddingModel, QdrantStore
 
 embedding_model = NepaliEmbeddingModel()
-store = QdrantStore(
-  collection_name="my_collection",
-  url="https://your-cluster.cloud.qdrant.io",
-  api_key="your-qdrant-api-key",
+store = QdrantStore(  
+    collection_name="my_collection",
+    url="https://your-cluster.cloud.qdrant.io",
+    api_key="your-qdrant-api-key",
 )
 
 pipeline = DocumentPipeline(
