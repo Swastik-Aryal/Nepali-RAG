@@ -16,9 +16,10 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
 - **Qdrant** vector database instance (cloud)
   - Create a cluster at [cloud.qdrant.io](https://cloud.qdrant.io) — you'll need the URL and API key
 - **LLM backend** (at least one):
-  - Ollama (easiest): `ollama pull gemma3:4b` or any other model of choice (would recommend a model that supports tool-calling)
+  - Ollama (easiest): `ollama pull gemma4` or any other model of choice (would recommend a model that supports tool-calling)
   - vLLM server for OpenAI-compatible API
   - OpenAI API key
+  - Any OpenAI-compatible provider (Groq, DeepSeek, Together AI, Fireworks, Mistral, etc.) — just needs an API key and base URL
   - Google Gemini API key
   - Hugging-face API key
 
@@ -128,7 +129,7 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
 ```python
 from nepali_rag import Retriever, QdrantStore, RAGChain, get_llm
 
-store = QdrantStore(collection_name="my_collection")
+store = QdrantStore(collection_name="my_collection") # Name of collection where chunks are stored (Defaults to .env/settings.py value)
 retriever = Retriever(store=store)
 llm = get_llm()
 chain = RAGChain(retriever=retriever, llm=llm)
@@ -146,7 +147,7 @@ from nepali_rag import (
 )
 
 store = QdrantStore(
-  collection_name="my_collection", 
+  collection_name="my_collection", # Name of collection where chunks are stored (Defaults to .env/settings.py value)
   url="https://your-cluster.cloud.qdrant.io",
   api_key="your-qdrant-api-key"
 )
@@ -196,7 +197,7 @@ nepali-rag query "नेपालको संविधानमा के ल�
   --qdrant-api-key your-qdrant-api-key \
   -c my_collection \
   --provider ollama \
-  --model gemma3:4b \
+  --model gemma4 \
   --top-k 20 \
   --top-r 5 \
   --temperature 0.3 \
@@ -212,7 +213,7 @@ nepali-rag query "त्यसको बारेमा थप विस्त�
   --qdrant-api-key your-qdrant-api-key \
   -c my_collection \
   --provider ollama \
-  --model gemma3:4b \
+  --model gemma4 \
   --history history.json \
   -v
 
@@ -222,7 +223,7 @@ nepali-rag query "Can you translate that to English?" \
   --qdrant-api-key your-qdrant-api-key \
   -c my_collection \
   --provider ollama \
-  --model gemma3:4b \
+  --model gemma4 \
   --history '[{"role":"user","content":"नेपालको राजधानी कहाँ हो?"},{"role":"assistant","content":"नेपालको राजधानी काठमाडौं हो।"}]' \
   -v
 ```
@@ -270,14 +271,15 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                             |
 | `RERANKER_MODEL`          | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Reranker model name                                              |
 | `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf` |
-| `VLLM_MODEL`              | `google/gemma-3-4b-it`                       | Model for vLLM provider                                          |
+| `VLLM_MODEL`              | `google/gemma-4-E4B-it`                       | Model for vLLM provider                                          |
 | `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                             |
-| `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key                                                   |
-| `OPENAI_MODEL`            | `gpt-4o-mini`                                | Model for OpenAI provider                                        |
+| `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key (or key for any OpenAI-compatible provider)       |
+| `OPENAI_BASE_URL`         | *(empty)*                                    | Custom base URL for OpenAI-compatible providers (e.g. Groq, DeepSeek) |
+| `OPENAI_MODEL`            | `gpt-4o-mini`                                | Model for OpenAI / OpenAI-compatible provider                    |
 | `GOOGLE_API_KEY`          | *(empty)*                                    | Google API key for Gemini                                        |
 | `GEMINI_MODEL`            | `gemini-2.5-flash`                           | Model for Gemini provider                                        |
 | `OLLAMA_BASE_URL`         | `http://localhost:11434`                     | Ollama server endpoint                                           |
-| `OLLAMA_MODEL`            | `gemma3:4b`                                  | Model for Ollama provider                                        |
+| `OLLAMA_MODEL`            | `gemma4`                                     | Model for Ollama provider                                        |
 | `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                             |
 | `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                                  |
 | `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                                      |
@@ -313,13 +315,63 @@ The system supports five LLM backends through a unified `get_llm()` factory. Swi
 
 | Provider             | Setup                                                   | Model                                                                                  |
 | -------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **`ollama`** | `ollama pull gemma3:4b`                               | Set `model = "gemma3:4b"` OR any other model but in the ollama format.               |
-| **`vllm`**   | Start vLLM server with `--model google/gemma-3-4b-it` | Set `model = "google/gemma-3-4b-it"` OR any other model but in the vllm format.    |
-| **`openai`** | Set `OPENAI_API_KEY` or pass `--api-key`            | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.        |
-| **`gemini`** | Set `GOOGLE_API_KEY` or pass `--api-key`            | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
+| **`ollama`** | `ollama pull gemma4`                                  | Set `model = "gemma4"` OR any other model but in the ollama format.                  |
+| **`vllm`**   | Start vLLM server with `--model google/gemma-4-E4B-it` | Set `model = "google/gemma-4-E4B-it"` OR any other model but in the vllm format.   |
+| **`openai`** | Set `OPENAI_API_KEY` or pass `--api-key`            | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.        |
+| **`gemini`** | Set `GOOGLE_API_KEY` or pass `--api-key`            | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
 | **`hf`**     | Set `HF_TOKEN` or pass `--api-key`                  | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.                  |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
+
+### OpenAI-Compatible Providers
+
+The `openai` provider also works with **any third-party API that follows the OpenAI format** — just set `OPENAI_BASE_URL` to point at the provider's endpoint. This includes:
+
+| Provider         | Base URL                                   | Example Model              |
+| ---------------- | ------------------------------------------ | -------------------------- |
+| **Groq**         | `https://api.groq.com/openai/v1`           | `llama-3.3-70b-versatile`  |
+| **DeepSeek**     | `https://api.deepseek.com/v1`              | `deepseek-chat`            |
+| **Together AI**  | `https://api.together.xyz/v1`              | `meta-llama/Llama-3-70b`   |
+| **Fireworks**    | `https://api.fireworks.ai/inference/v1`    | `accounts/fireworks/models/llama-v3-70b` |
+| **Mistral**      | `https://api.mistral.ai/v1`               | `mistral-large-latest`     |
+| **OpenRouter**   | `https://openrouter.ai/api/v1`            | `openai/gpt-4o`            |
+
+**`.env` example for Groq:**
+
+```env
+LLM_PROVIDER=openai
+OPENAI_API_KEY=gsk_your-groq-key-here
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
+OPENAI_MODEL=llama-3.3-70b-versatile
+```
+
+**Python:**
+
+```python
+from nepali_rag import get_llm
+
+llm = get_llm(
+    "openai",
+    base_url="https://api.groq.com/openai/v1",
+    api_key="gsk_...",
+    model="llama-3.3-70b-versatile",
+)
+```
+
+**CLI:**
+
+```bash
+nepali-rag query "नेपालको संविधानमा के लेखिएको छ?" \
+  --qdrant-url https://your-cluster.cloud.qdrant.io \
+  --qdrant-api-key your-qdrant-api-key \
+  -c my_collection \
+  --provider openai \
+  --model llama-3.3-70b-versatile \
+  --api-key gsk_your-groq-key \
+  --llm-base-url https://api.groq.com/openai/v1
+```
+
+> **Note:** The base URL should point to the `/v1` endpoint (not `/v1/chat/completions`). The client appends `/chat/completions` automatically.
 
 ## API Endpoints
 
@@ -368,9 +420,9 @@ nepali-rag query "<question>"
     --qdrant-api-key KEY      (required) Qdrant API key
     -c, --collection NAME     collection name (default: nepali_docs)
     --provider PROVIDER       LLM provider (default: ollama)
-    --model MODEL             LLM model name (default: gemma3:4b)
+    --model MODEL             LLM model name (default: gemma4)
     --api-key KEY             API key for LLM provider (required for openai, gemini, hf)
-    --llm-base-url URL        base URL for LLM server (for vllm, ollama, hf)
+    --llm-base-url URL        base URL for LLM server (for vllm, openai, ollama, hf)
     --temperature FLOAT       LLM temperature (default: 0.3)
     --top-k N                 retrieval candidates (default: 20)
     --top-r N                 rerank candidates (default: 5)
@@ -515,7 +567,7 @@ Connects retrieval to generation with three operating modes:
 | **Test mode** (`llm=None`)          | The full retrieval pipeline runs but returns the formatted prompt instead of an LLM-generated answer.                                                                   |
 
 - **Framework**: **LangChain** (`langchain-core` messages: `SystemMessage`, `HumanMessage`, `AIMessage`, `ToolMessage`).
-- **Prompt design**: Bilingual system prompt instructs the LLM to cite retrieved chunks by number (e.g., `[1]`, `[2]`), answer in the user's language, and avoid fabrication when context is insufficient.
+- **Prompt design**: Bilingual system prompt instructs the LLM to prioritize retrieved context, answer in the user's language, and avoid fabrication when context is insufficient.
 - **Conversation support**: Optional multi-turn history is prepended to the LLM messages for continuity but is not used for retrieval.
 
 ---
@@ -539,9 +591,10 @@ A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatM
 
 | Provider                    | LangChain Class                             | Default Model            |
 | --------------------------- | ------------------------------------------- | ------------------------ |
-| **Ollama**            | `ChatOllama`                              | `gemma3:4b`            |
-| **vLLM**              | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-3-4b-it` |
+| **Ollama**            | `ChatOllama`                              | `gemma4`               |
+| **vLLM**              | `ChatOpenAI` (OpenAI-compatible endpoint) | `google/gemma-4-E4B-it` |
 | **OpenAI**            | `ChatOpenAI`                              | `gpt-4o-mini`          |
+| **OpenAI-compatible** (Groq, DeepSeek, etc.) | `ChatOpenAI` (custom `base_url`) | *(varies by provider)* |
 | **Gemini**            | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`     |
 | **Hugging Face (HF)** | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B` |
 

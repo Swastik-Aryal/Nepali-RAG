@@ -24,11 +24,11 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
         - **kwargs: Forwarded to the provider factory.
             - Common keys:
                 - ``model``: Default model to use for the LLM.
-                        - default ``settings.vllm_model`` for vllm ("gemma3:4b"),
+                        - default ``settings.vllm_model`` for vllm ("google/gemma-4-E4B-it"),
                         - default ``settings.hf_model_name`` for hf ("Qwen/Qwen3.6-35B-A3B"),
                         - default ``settings.openai_model`` for openai ("gpt-4o-mini"),
                         - default ``settings.gemini_model`` for gemini ("gemini-2.5-flash"),
-                        - default ``settings.ollama_model`` for ollama ("gemma3:4b")
+                        - default ``settings.ollama_model`` for ollama ("gemma4")
                 - ``temperature``: Default temperature to use for the LLM.
                         - default ``settings.llm_temperature`` (0.3)
                 - ``api_key``: API key for authenticating with the LLM.
@@ -36,9 +36,10 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
                         - default ``settings.google_api_key`` for gemini ("")
                         - default ``settings.hf_token`` for hf ("")
                 - ``base_url``: Base URL of the LLM.
-                        - default ``settings.vllm_base_url`` for vllm ("http://localhost:8000/v1")
-                        - default ``settings.ollama_base_url`` for ollama ("http://localhost:11434")
-                        - default ``settings.hf_base_url`` for hf ("https://router.huggingface.co/v1")
+                        - default ``settings.vllm_base_url`` for vllm (``http://localhost:8000/v1``)
+                        - default ``settings.openai_base_url`` for openai (``""``, uses official API)
+                        - default ``settings.ollama_base_url`` for ollama (``http://localhost:11434``)
+                        - default ``settings.hf_base_url`` for hf (``https://router.huggingface.co/v1``)
     
     Returns:
         A configured BaseChatModel instance.

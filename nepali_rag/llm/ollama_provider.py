@@ -9,7 +9,7 @@ def get_ollama_llm(**kwargs) -> BaseChatModel:
 
     No API key required. Pull the model first with ``ollama pull <model>``.
 
-    Kwargs default to settings: ``model`` (``settings.ollama_model``, ``gemma3:4b``),
+    Kwargs default to settings: ``model`` (``settings.ollama_model``, ``gemma4``),
     ``base_url`` (``settings.ollama_base_url``, ``http://localhost:11434``),
     ``temperature`` (``settings.llm_temperature``, 0.3).
     """

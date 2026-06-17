@@ -1,6 +1,7 @@
 """Shared data models for the ingestion pipeline."""
 
 from dataclasses import dataclass
+import os
 
 
 @dataclass
@@ -18,3 +19,6 @@ class PageResult:
     text: str
     source: str
     extraction_method: str
+
+    def __post_init__(self):
+        self.source = os.path.basename(self.source)

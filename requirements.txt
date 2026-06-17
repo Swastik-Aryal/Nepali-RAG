@@ -35,9 +35,9 @@ torch>=2.0.0
 qdrant-client>=1.9.0
 
 # API
-fastapi>=0.111.0
-uvicorn>=0.29.0
-python-multipart>=0.0.9
+fastapi>=0.127.0,<0.129.1
+uvicorn>=0.34.0
+python-multipart>=0.0.20
 
 # Dev / Testing
 pytest>=8.0.0

@@ -10,7 +10,7 @@ def get_vllm_llm(**kwargs) -> BaseChatModel:
 
     No API key required.
 
-    Kwargs default to settings: ``model`` (``settings.vllm_model``, ``google/gemma-3-4b-it``),
+    Kwargs default to settings: ``model`` (``settings.vllm_model``, ``google/gemma-4-E4B-it``),
     ``base_url`` (``settings.vllm_base_url``, ``http://localhost:8000/v1``),
     ``temperature`` (``settings.llm_temperature``, 0.3).
     """

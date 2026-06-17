@@ -220,6 +220,13 @@ class RAGChain:
         # LLM chose NOT to call the tool 
         if not response.tool_calls:
             answer = response.content if hasattr(response, "content") else str(response)
+            # Some providers (e.g. Gemini) return content as a list of
+            # content-part dicts when tools are bound but not called.
+            # Normalise to a plain string.
+            if isinstance(answer, list):
+                answer = " ".join(
+                    part.get("text", "") for part in answer if isinstance(part, dict)
+                ).strip() or str(answer)
             logger.info("Tool-calling mode: LLM skipped retrieval for '%s'", question[:80])
             return {
                 "answer": answer,

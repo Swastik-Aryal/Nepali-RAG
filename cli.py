@@ -3,8 +3,13 @@ import logging
 import sys
 
 
+def _status(msg: str):
+    """Print a minimal status message to stderr."""
+    print(f"  ⟶  {msg}", file=sys.stderr, flush=True)
+
+
 def _setup_logging(verbose: bool = False):
-    level = logging.DEBUG if verbose else logging.INFO
+    level = logging.DEBUG if verbose else logging.WARNING
     logging.basicConfig(
         level=level,
         format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
@@ -19,7 +24,10 @@ def cmd_ingest(args):
     from nepali_rag.vectorstore.qdrant_store import QdrantStore
     from nepali_rag.pipeline.document_pipeline import DocumentPipeline
 
+    _status("Loading embedding model...")
     embedding_model = NepaliEmbeddingModel()
+
+    _status("Connecting to Qdrant...")
     store = QdrantStore(
         collection_name=args.collection,
         url=args.qdrant_url,
@@ -33,6 +41,7 @@ def cmd_ingest(args):
         chunk_overlap_sentences=args.chunk_overlap,
     )
 
+    _status("Ingesting files...")
     results = pipeline.ingest_batch(args.files)
 
     for result in results:
@@ -70,14 +79,18 @@ def cmd_query(args):
     from nepali_rag.retrieval.reranker import Reranker
     from nepali_rag.rag.chain import RAGChain
 
+    _status("Loading models…")
     embedding_model = NepaliEmbeddingModel()
     reranker = Reranker()
 
+    _status("Connecting to Qdrant...")
     store = QdrantStore(
         collection_name=args.collection,
         url=args.qdrant_url,
         api_key=args.qdrant_api_key,
     )
+    
+    _status("Retrieving document context...")
     retriever = Retriever(embedding_model=embedding_model, reranker=reranker, store=store)
 
     llm = None
@@ -97,6 +110,7 @@ def cmd_query(args):
 
     conversation_history = _load_history(args.history)
 
+    _status("Thinking…")
     result = chain.run(
         question=args.question,
         conversation_history=conversation_history,
@@ -105,14 +119,6 @@ def cmd_query(args):
     )
 
     print(result["answer"])
-
-    if result.get("sources"):
-        print(f"\nSources ({len(result['sources'])} chunks):")
-        for i, src in enumerate(result["sources"], 1):
-            meta = src.get("metadata", {})
-            score = src.get("rerank_score") or src.get("score", 0)
-            print(f"  [{i}] {meta.get('source', '?')} p.{meta.get('page_number', '?')}  (score {score:.3f})")
-
 
 def cmd_serve(args):
     """Start the FastAPI server."""
@@ -140,15 +146,19 @@ def main():
         prog="nepali-rag",
         description="Nepali RAG System: ingest documents, query them, or start the API server.",
     )
-    parser.add_argument(
+
+    # Shared parent parser so -v/--verbose works in any position
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
         "-v", "--verbose",
         action="store_true",
         help="enable debug logging",
     )
+
     subparsers = parser.add_subparsers(dest="command")
 
     # ingest 
-    p_ingest = subparsers.add_parser("ingest", help="ingest documents into the vector store")
+    p_ingest = subparsers.add_parser("ingest", parents=[common], help="ingest documents into the vector store")
     p_ingest.add_argument("files", nargs="+", help="path(s) to the document file(s)")
     p_ingest.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
     p_ingest.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
@@ -158,13 +168,13 @@ def main():
     p_ingest.set_defaults(func=cmd_ingest)
 
     # query 
-    p_query = subparsers.add_parser("query", help="query the RAG pipeline")
+    p_query = subparsers.add_parser("query", parents=[common], help="query the RAG pipeline")
     p_query.add_argument("question", help="the question to ask")
     p_query.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
     p_query.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
     p_query.add_argument("-c", "--collection", default="nepali_docs", help="Qdrant collection to search (default: nepali_docs)")
     p_query.add_argument("--provider", default="ollama", help="LLM provider: ollama, vllm, openai, gemini, hf (default: ollama)")
-    p_query.add_argument("--model", default="gemma3:4b", help="LLM model name (default: gemma3:4b)")
+    p_query.add_argument("--model", default="gemma4", help="LLM model name (default: gemma4)")
     p_query.add_argument("--api-key", default=None, help="API key for the LLM provider (required for openai, gemini, hf)")
     p_query.add_argument("--llm-base-url", default=None, help="base URL for the LLM server (for vllm, ollama, hf)")
     p_query.add_argument("--temperature", type=float, default=0.3, help="LLM temperature (default: 0.3)")
@@ -176,7 +186,7 @@ def main():
     p_query.set_defaults(func=cmd_query)
 
     # serve 
-    p_serve = subparsers.add_parser("serve", help="start the FastAPI server")
+    p_serve = subparsers.add_parser("serve", parents=[common], help="start the FastAPI server")
     p_serve.add_argument("--env-file", default=".env", help="path to .env file (default: .env in CWD)")
     p_serve.add_argument("--host", default="0.0.0.0", help="bind address (default: 0.0.0.0)")
     p_serve.add_argument("--port", type=int, default=8080, help="port (default: 8080)")
