@@ -151,7 +151,7 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
   --chunk-overlap 2 \
   -v
 ```
-
+---
 ### 3.2 Query your documents
 
 **Python (less control, requires `.env` file):**
@@ -272,7 +272,7 @@ nepali-rag query "नेपालको संविधानमा के ल�
   --api-key your-google-api-key \
   -v
 ```
-
+---
 ### 3.3 Start the FastAPI server
 
 **Terminal:**
