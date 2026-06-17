@@ -8,35 +8,35 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
 
 ## Contents
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-  - [1. Ingest a document](#1-ingest-a-document)
-  - [2. Query your documents](#2-query-your-documents)
-  - [3. Start the FastAPI server](#3-start-the-fastapi-server)
-- [Configuration](#configuration)
-- [CLI Reference](#cli-reference)
-- [Supported Document Formats](#supported-document-formats)
-- [LLM Providers](#llm-providers)
-- [FastAPI Configuration](#fastapi-server-configuration)
-- [Project Structure](#project-structure)
-- [Component Details](#component-details)
-  - [Architecture](#architecture)
-  - [Document Ingestion](#document-ingestion-nepali_ragingestion)
-  - [Text Preprocessing](#text-preprocessing-nepali_ragpreprocessing)
-  - [Chunking](#chunking-nepali_ragchunking)
-  - [Embeddings](#embeddings-nepali_ragembeddings)
-  - [Vector Store](#vector-store-nepali_ragvectorstore)
-  - [Retrieval](#retrieval-nepali_ragretrieval)
-  - [RAG Chain](#rag-chain-nepali_ragrag)
-  - [Tool-Calling Mode](#tool-calling-mode)
-  - [LLM Integration](#llm-integration-nepali_ragllm)
-  - [Document Pipeline](#document-pipeline-nepali_ragpipeline)
-  - [FastAPI Server](#fastapi-server-nepali_ragapi)
-  - [RAG Configuration](#rag-configuration-nepali_ragconfig)
-- [License](#license)
+1. [Prerequisites](#1-prerequisites)
+2. [Installation](#2-installation)
+3. [Quick Start](#3-quick-start)
+   - [3.1 Ingest a document](#31-ingest-a-document)
+   - [3.2 Query your documents](#32-query-your-documents)
+   - [3.3 Start the FastAPI server](#33-start-the-fastapi-server)
+4. [Configuration](#4-configuration)
+5. [CLI Reference](#5-cli-reference)
+6. [Supported Document Formats](#6-supported-document-formats)
+7. [LLM Providers](#7-llm-providers)
+8. [FastAPI Server Configuration](#8-fastapi-server-configuration)
+9. [Project Structure](#9-project-structure)
+10. [Component Details](#10-component-details)
+    - [i. Architecture](#i-architecture)
+    - [ii. Document Ingestion](#ii-document-ingestion-nepali_ragingestion)
+    - [iii. Text Preprocessing](#iii-text-preprocessing-nepali_ragpreprocessing)
+    - [iv. Chunking](#iv-chunking-nepali_ragchunking)
+    - [v. Embeddings](#v-embeddings-nepali_ragembeddings)
+    - [vi. Vector Store](#vi-vector-store-nepali_ragvectorstore)
+    - [vii. Retrieval](#vii-retrieval-nepali_ragretrieval)
+    - [viii. RAG Chain](#viii-rag-chain-nepali_ragrag)
+    - [ix. Tool-Calling Mode](#ix-tool-calling-mode)
+    - [x. LLM Integration](#x-llm-integration-nepali_ragllm)
+    - [xi. Document Pipeline](#xi-document-pipeline-nepali_ragpipeline)
+    - [xii. FastAPI Server](#xii-fastapi-server-nepali_ragapi)
+    - [xiii. RAG Configuration](#xiii-rag-configuration-nepali_ragconfig)
+11. [License](#11-license)
 
-## Prerequisites
+## 1. Prerequisites
 
 - **Python 3.10+**
 - **Tesseract OCR** with Nepali language data (`nep` trained data)
@@ -53,7 +53,7 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
   - Google Gemini API key
   - Hugging-face API key
 
-## Installation
+## 2. Installation
 
 ```bash
 git clone https://github.com/Swastik-Aryal/Nepali-RAG.git
@@ -91,9 +91,9 @@ QDRANT_API_KEY=your-qdrant-api-key
 
 > **Note:** The `.env` file is **not required** for terminal (CLI) usage. All parameters are passed directly as command-line arguments.
 
-## Quick Start
+## 3. Quick Start
 
-### 1. Ingest a document
+### 3.1 Ingest a document
 
 **Python (less control, requires `.env` file):**
 
@@ -152,7 +152,7 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
   -v
 ```
 
-### 2. Query your documents
+### 3.2 Query your documents
 
 **Python (less control, requires `.env` file):**
 
@@ -273,7 +273,7 @@ nepali-rag query "नेपालको संविधानमा के ल�
   -v
 ```
 
-### 3. Start the FastAPI server
+### 3.3 Start the FastAPI server
 
 **Terminal:**
 
@@ -289,7 +289,7 @@ The API will be available at `http://localhost:8080`. Interactive docs at `http:
 
 > **Note:** The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
 
-## Configuration
+## 4. Configuration
 
 Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can be overridden/managed through a `.env` file. See [`.env.example`](.env.example) for the full list.
 
@@ -323,7 +323,7 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `LLM_TEMPERATURE`         | `0.3`                                        | LLM generation temperature                                            |
 | `USE_TOOLS`               | `true`                                       | Enable tool-calling mode                                              |
 
-## CLI Reference
+## 5. CLI Reference
 
 ```
 nepali-rag ingest <file> [<file> ...]
@@ -358,7 +358,7 @@ nepali-rag serve
     -v                        enable debug logging
 ```
 
-## Supported Document Formats
+## 6. Supported Document Formats
 
 | Format                    | Extensions          | Method                     |
 | ------------------------- | ------------------- | -------------------------- |
@@ -374,7 +374,7 @@ nepali-rag serve
 | EPUB                      | `.epub`           | EbookLib                   |
 | OpenDocument              | `.odt`            | odfpy                      |
 
-## LLM Providers
+## 7. LLM Providers
 
 The system supports five LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
 
@@ -438,7 +438,7 @@ nepali-rag query "नेपालको संविधानमा के ल�
 
 > **Note:** The base URL should point to the `/v1` endpoint (not `/v1/chat/completions`). The client appends `/chat/completions` automatically.
 
-## FastAPI Server Configuration
+## 8. FastAPI Server Configuration
 
 Start the server with `nepali-rag serve`. Interactive docs available at `http://localhost:8080/docs`.
 
@@ -715,7 +715,7 @@ curl http://localhost:8080/api/v1/conversations/061004efc64840f7
 }
 ```
 
-## Project Structure
+## 9. Project Structure
 
 ```
 nepali-rag/
@@ -743,13 +743,13 @@ nepali-rag/
 └── README.md
 ```
 
-## Component Details
+## 10. Component Details
 
-### Architecture
+### i. Architecture
 
 ![architecture](./nepali_rag/data/architecture/architecture.svg)
 
-### Document Ingestion (`nepali_rag/ingestion/`)
+### ii. Document Ingestion (`nepali_rag/ingestion/`)
 
 Handles loading and text extraction from 11+ document formats. PDFs are rendered page-by-page to 300 DPI images using **PyMuPDF** (`fitz`) and processed through **Tesseract OCR** with Nepali (`nep`) + English (`eng`) language data. Other formats use dedicated parsers:
 
@@ -769,7 +769,7 @@ Every page is returned as a `PageResult` dataclass carrying the extracted text, 
 
 ---
 
-### Text Preprocessing (`nepali_rag/preprocessing/`)
+### iii. Text Preprocessing (`nepali_rag/preprocessing/`)
 
 Normalizes raw extracted text for consistent downstream processing:
 
@@ -780,7 +780,7 @@ Normalizes raw extracted text for consistent downstream processing:
 
 ---
 
-### Chunking (`nepali_rag/chunking/`)
+### iv. Chunking (`nepali_rag/chunking/`)
 
 A two-level, structure-aware chunker that respects both paragraph boundaries and Nepali sentence delimiters (purna viram `।`, double danda `॥`, and standard `.`, `!`, `?`).
 
@@ -791,7 +791,7 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 
 ---
 
-### Embeddings (`nepali_rag/embeddings/`)
+### v. Embeddings (`nepali_rag/embeddings/`)
 
 - **Model**: [`intfloat/multilingual-e5-large`](https://huggingface.co/intfloat/multilingual-e5-large) - a 1024-dimension multilingual embedding model with strong Nepali support.
 - **Library**: **sentence-transformers** (`SentenceTransformer`).
@@ -800,7 +800,7 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 
 ---
 
-### Vector Store (`nepali_rag/vectorstore/`)
+### vi. Vector Store (`nepali_rag/vectorstore/`)
 
 - **Database**: **Qdrant** (Qdrant Cloud).
 - **Dual vector storage**: Each chunk is stored with both a **dense vector** (1024-dim cosine, from the embedding model) and a **sparse vector** (term-frequency based, computed via MD5 hashing of whitespace-split tokens into a 2²⁰-dimensional space).
@@ -820,7 +820,7 @@ qdrant_store = QdrantStore(collection_name="SOME_COLLECTION_NAME", client=local_
 
 ---
 
-### Retrieval (`nepali_rag/retrieval/`)
+### vii. Retrieval (`nepali_rag/retrieval/`)
 
 Two-stage retrieval pipeline:
 
@@ -832,7 +832,7 @@ Two-stage retrieval pipeline:
 
 ---
 
-### RAG Chain (`nepali_rag/rag/`)
+### viii. RAG Chain (`nepali_rag/rag/`)
 
 Connects retrieval to generation with three operating modes:
 
@@ -848,7 +848,7 @@ Connects retrieval to generation with three operating modes:
 
 ---
 
-### Tool-Calling Mode
+### ix. Tool-Calling Mode
 
 By default, the RAG chain operates in **tool-calling mode**, the LLM receives a `retrieve_documents` tool definition and autonomously decides whether retrieval is necessary for each message.
 
@@ -861,7 +861,7 @@ By default, the RAG chain operates in **tool-calling mode**, the LLM receives a 
 
 ---
 
-### LLM Integration (`nepali_rag/llm/`)
+### x. LLM Integration (`nepali_rag/llm/`)
 
 A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatModel`** for any supported provider. Provider-specific logic is isolated in individual modules:
 
@@ -878,7 +878,7 @@ All providers expose the same interface - callers use `get_llm()` and never impo
 
 ---
 
-### Document Pipeline (`nepali_rag/pipeline/`)
+### xi. Document Pipeline (`nepali_rag/pipeline/`)
 
 The `DocumentPipeline` class orchestrates the full ingestion workflow in a single call:
 
@@ -892,7 +892,7 @@ load_document() → normalize_text() → chunk_pages() → embed_documents() →
 
 ---
 
-### FastAPI Server (`nepali_rag/api/`)
+### xii. FastAPI Server (`nepali_rag/api/`)
 
 A REST API layer built with **FastAPI** and **Uvicorn**:
 
@@ -903,10 +903,10 @@ A REST API layer built with **FastAPI** and **Uvicorn**:
 
 ---
 
-### RAG Configuration (`nepali_rag/config/`)
+### xiii. RAG Configuration (`nepali_rag/config/`)
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 
-## License
+## 11. License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
