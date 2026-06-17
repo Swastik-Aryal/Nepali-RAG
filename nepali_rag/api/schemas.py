@@ -79,3 +79,9 @@ class CollectionInfo(BaseModel):
     name: str
     points_count: int
     status: str
+
+class ConversationDetail(BaseModel):
+    """Full turn-by-turn history for a single persisted conversation."""
+
+    conversation_id: str
+    turns: list[ConversationTurn]
