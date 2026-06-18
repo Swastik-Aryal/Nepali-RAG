@@ -197,7 +197,7 @@ async def query_documents(request: Request, body: QueryRequest):
                 ``settings.top_k_rerank`` (5), overridden by ``TOP_K_RERANK``
                 in ENV if present.
             - ``llm_provider`` (str, optional): LLM provider override (e.g. ``"ollama"``,
-                ``"openai"``, ``"gemini"``, ``"huggingface"``, ``"vllm"``).
+                ``"openai"``, ``"gemini"``, ``"huggingface"``, ``"vllm"``, ``anthropic``).
                 Defaults to ``None``. If ``None``, falls back to
                 ``settings.llm_provider``, overridden by ``LLM_PROVIDER`` in
                 ENV if present.

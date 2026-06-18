@@ -173,7 +173,7 @@ def main():
     p_query.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
     p_query.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
     p_query.add_argument("-c", "--collection", default="nepali_docs", help="Qdrant collection to search (default: nepali_docs)")
-    p_query.add_argument("--provider", default="ollama", help="LLM provider: ollama, vllm, openai, gemini, hf (default: ollama)")
+    p_query.add_argument("--provider", default="ollama", help="LLM provider: ollama, vllm, openai, gemini, hf, anthropic (default: ollama)")
     p_query.add_argument("--model", default="gemma4", help="LLM model name (default: gemma4)")
     p_query.add_argument("--api-key", default=None, help="API key for the LLM provider (required for openai, gemini, hf)")
     p_query.add_argument("--llm-base-url", default=None, help="base URL for the LLM server (for vllm, ollama, hf)")

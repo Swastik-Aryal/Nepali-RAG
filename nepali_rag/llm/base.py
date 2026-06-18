@@ -3,6 +3,7 @@ from nepali_rag.config.settings import settings
 
 
 PROVIDERS = {
+    "anthropic": "nepali_rag.llm.anthropic_provider.get_anthropic_llm",
     "vllm": "nepali_rag.llm.vllm_provider.get_vllm_llm",
     "openai": "nepali_rag.llm.openai_provider.get_openai_llm",
     "gemini": "nepali_rag.llm.gemini_provider.get_gemini_llm",
@@ -19,11 +20,12 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
     interact with the standard LangChain chat model interface.
 
     Args:
-        - provider: One of ``vllm``, ``hf``, ``openai``, ``gemini``, ``ollama``.
+        - provider: One of ``anthropic``, ``vllm``, ``hf``, ``openai``, ``gemini``, ``ollama``.
             Defaults to ``settings.llm_provider`` (``ollama``).
         - **kwargs: Forwarded to the provider factory.
             - Common keys:
                 - ``model``: Default model to use for the LLM.
+                        - default ``settings.anthropic_model`` for anthropic ("claude-opus-4-6"),
                         - default ``settings.vllm_model`` for vllm ("google/gemma-4-E4B-it"),
                         - default ``settings.hf_model_name`` for hf ("Qwen/Qwen3.6-35B-A3B"),
                         - default ``settings.openai_model`` for openai ("gpt-4o-mini"),
@@ -32,6 +34,7 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
                 - ``temperature``: Default temperature to use for the LLM.
                         - default ``settings.llm_temperature`` (0.3)
                 - ``api_key``: API key for authenticating with the LLM.
+                        - default ``settings.anthropic_api_key`` for anthropic (""),
                         - default ``settings.openai_api_key`` for openai ("")
                         - default ``settings.google_api_key`` for gemini ("")
                         - default ``settings.hf_token`` for hf ("")

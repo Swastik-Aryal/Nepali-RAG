@@ -300,7 +300,7 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `COLLECTION_NAME`         | `nepali_docs`                                | Default Qdrant collection                                             |
 | `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                                  |
 | `RERANKER_MODEL`          | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Reranker model name                                                   |
-| `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`      |
+| `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic`      |
 | `VLLM_MODEL`              | `google/gemma-4-E4B-it`                      | Model for vLLM provider                                               |
 | `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                                  |
 | `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key (or key for any OpenAI-compatible provider)            |
@@ -313,6 +313,8 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                                  |
 | `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                                       |
 | `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                                           |
+| `ANTHROPIC_API_KEY`       | *(empty)*                                    | Anthropic API key for Claude                                          |
+| `ANTHROPIC_MODEL`         | `claude-opus-4-6`                   | Model for Anthropic provider                                          |
 | `TESSERACT_LANGUAGES`     | `nep`                                        | OCR language configuration                                            |
 | `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens                                          |
 | `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                                       |
@@ -376,15 +378,16 @@ nepali-rag serve
 
 ## 7. LLM Providers
 
-The system supports five LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
+The system supports six LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
 
-| Provider             | Setup                                                    | Model                                                                               |
-| -------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **`ollama`** | `ollama pull gemma4`                                   | Set `model = "gemma4"` OR any other model but in the ollama format.               |
-| **`vllm`**   | Start vLLM server with `--model google/gemma-4-E4B-it` | Set `model = "google/gemma-4-E4B-it"` OR any other model but in the vllm format.  |
-| **`openai`** | Set `OPENAI_API_KEY` or pass `--api-key`             | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.      |
-| **`gemini`** | Set `GOOGLE_API_KEY` or pass `--api-key`             | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
-| **`hf`**     | Set `HF_TOKEN` or pass `--api-key`                   | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.               |
+| Provider                 | Setup                                                    | Model                                                                               |
+| ------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **`ollama`**     | `ollama pull gemma4`                                   | Set `model = "gemma4"` OR any other model but in the ollama format.               |
+| **`vllm`**       | Start vLLM server with `--model google/gemma-4-E4B-it` | Set `model = "google/gemma-4-E4B-it"` OR any other model but in the vllm format.  |
+| **`openai`**     | Set `OPENAI_API_KEY` or pass `--api-key`             | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.      |
+| **`gemini`**     | Set `GOOGLE_API_KEY` or pass `--api-key`             | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
+| **`hf`**         | Set `HF_TOKEN` or pass `--api-key`                   | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.               |
+| **`anthropic`** | Set `ANTHROPIC_API_KEY` or pass `--api-key`          | Set `model = "claude-opus-4-6"` OR any Anthropic Claude model.           |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
 
@@ -873,6 +876,7 @@ A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatM
 | **OpenAI-compatible** (Groq, DeepSeek, etc.) | `ChatOpenAI` (custom `base_url`)        | *(varies by provider)*  |
 | **Gemini**                                   | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`      |
 | **Hugging Face (HF)**                        | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B`  |
+| **Anthropic**                                | `ChatAnthropic`                           | `claude-opus-4-6` |
 
 All providers expose the same interface - callers use `get_llm()` and never import provider modules directly.
 

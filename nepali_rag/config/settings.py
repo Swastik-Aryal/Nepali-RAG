@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     hf_base_url: str = "https://router.huggingface.co/v1"
     hf_token: str = ""
 
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-opus-4-6"
 
     tesseract_languages: str = "nep"
 
