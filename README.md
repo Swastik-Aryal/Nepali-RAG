@@ -780,7 +780,7 @@ Normalizes raw extracted text for consistent downstream processing:
 1. **Unicode NFC normalization** - ensures composed Devanagari forms (e.g., combining sequences are collapsed into single codepoints).
 2. **Zero-width character removal** - strips `U+200B` (zero-width space), `U+200C`/`U+200D` (joiners), and `U+FEFF` (BOM).
 3. **Whitespace normalization** - collapses runs of spaces/tabs to a single space, and 3+ newlines to a double newline.
-4. **Nepali detection** - `is_nepali_text()` classifies text as primarily Devanagari if >30% of non-whitespace characters fall in the `U+0900`–`U+097F` range.
+4. **Nepali detection** - `is_nepali_text()` classifies text as primarily Devanagari if >60% of non-whitespace characters fall in the `U+0900`–`U+097F` range.
 
 ---
 

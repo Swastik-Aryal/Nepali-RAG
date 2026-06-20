@@ -38,7 +38,7 @@ def normalize_text(text: str) -> str:
 
 
 def is_nepali_text(text: str) -> bool:
-    """Return True if >30% of non-whitespace characters are Devanagari (U+0900–U+097F).
+    """Return True if >60% of non-whitespace characters are Devanagari (U+0900–U+097F).
     
     Args:
         text (str): Text to check.
@@ -61,4 +61,4 @@ def is_nepali_text(text: str) -> bool:
     if total == 0:
         return False
 
-    return (devanagari / total) > 0.30
+    return (devanagari / total) > 0.60
