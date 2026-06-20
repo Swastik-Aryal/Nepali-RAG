@@ -34,7 +34,8 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
     - [xi. Document Pipeline](#xi-document-pipeline-nepali_ragpipeline)
     - [xii. FastAPI Server](#xii-fastapi-server-nepali_ragapi)
     - [xiii. RAG Configuration](#xiii-rag-configuration-nepali_ragconfig)
-11. [License](#11-license)
+11. [References](#11-references)
+12. [License](#12-license)
 
 ## 1. Prerequisites
 
@@ -299,7 +300,7 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `QDRANT_API_KEY`          | *(empty)*                                    | Qdrant Cloud authentication key                                       |
 | `COLLECTION_NAME`         | `nepali_docs`                                | Default Qdrant collection                                             |
 | `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                                  |
-| `RERANKER_MODEL`          | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Reranker model name                                                   |
+| `RERANKER_MODEL`          | `BAAI/bge-reranker-v2-m3` | Reranker model name                                                   |
 | `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic`      |
 | `VLLM_MODEL`              | `google/gemma-4-E4B-it`                      | Model for vLLM provider                                               |
 | `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                                  |
@@ -801,6 +802,8 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 - **Prefix handling**: Following the e5 specification, documents are prefixed with `"passage: "` and queries with `"query: "` before encoding.
 - **Normalization**: All embeddings are L2-normalized at encode time (`normalize_embeddings=True`).
 
+**Why this model:** In a recent study on Nepali question-answering retrieval [[1]](#ref-1), multilingual E5 embedding variants (small, base, large) were systematically evaluated against SBERT-based Nepali models and BM25 on a domain-specific Nepali FAQ dataset. The E5 models consistently outperformed all other approaches across Recall@k, NDCG@k, and MRR@k, with `intfloat/e5-large` achieving the highest Recall@10 (0.8902) and competitive MRR scores. The study concluded that multilingual E5 embeddings are the most effective for Nepali semantic retrieval, making `intfloat/multilingual-e5-large` the optimal choice for this system.
+
 ---
 
 ### vi. Vector Store (`nepali_rag/vectorstore/`)
@@ -830,8 +833,14 @@ Two-stage retrieval pipeline:
 1. **Stage 1 - Hybrid search**: Embeds the query, runs both dense and sparse search against Qdrant, and fuses results via RRF (default: top 20 candidates).
 2. **Stage 2 - Cross-encoder reranking**: Scores each `(query, passage)` pair with a cross-encoder and returns the top results (default: top 5).
 
-- **Reranker model**: [`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`](https://huggingface.co/cross-encoder/mmarco-mMiniLMv2-L12-H384-v1) - a multilingual cross-encoder trained on MS MARCO, providing strong relevance scoring for Nepali text.
+- **Reranker model**: [`BAAI/bge-reranker-v2-m3`](https://huggingface.co/BAAI/bge-reranker-v2-m3) - a multilingual cross-encoder reranker from the BGE family, providing strong relevance scoring across 100+ languages including Nepali.
 - **Library**: **sentence-transformers** (`CrossEncoder`).
+
+**Why this model:** The reranker is built on BGE-M3 [[2]](#ref-2)[[3]](#ref-3), which uses **XLM-RoBERTa** as its backbone — a model pretrained on CommonCrawl data covering 100+ languages including Nepali (Devanagari script). This gives it a strong foundation for Nepali text understanding out of the box. In the BGE-M3 paper [[2]](#ref-2), BGE-M3 achieved state-of-the-art results on multilingual (MIRACL) and cross-lingual (MKQA) benchmarks, outperforming prior models like mE5-large and E5-mistral-7b across 18 languages. The `bge-reranker-v2-m3` variant inherits this multilingual capability while being lightweight (0.6B params), fast to infer, and easy to deploy — the best performance-to-efficiency balance for multilingual reranking.
+
+**Other strong reranker options:**
+- **Qwen3-Embedding-0.6B** [[6]](#ref-6) — Matches BGE-M3's parameter count (0.6B) but scores slightly lower on the MTEB multilingual reranking subtask (61.41 vs 62.79). Choose this if you are already using the Qwen3 ecosystem and prefer model-family consistency across embedding and reranking.
+- **bge-reranker-v2-gemma** [[5]](#ref-5) — A 3B LLM-based reranker built on Google's Gemma-2B. Delivers stronger ranking accuracy at the cost of higher memory and slower inference. Choose this when throughput is not the bottleneck and maximum ranking precision is the priority.
 
 ---
 
@@ -911,6 +920,20 @@ A REST API layer built with **FastAPI** and **Uvicorn**:
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 
-## 11. License
+## 11. References
+
+<a id="ref-1"></a>1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
+
+<a id="ref-2"></a>2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
+
+<a id="ref-3"></a>3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
+
+<a id="ref-4"></a>4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
+
+<a id="ref-5"></a>5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
+
+<a id="ref-6"></a>6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
+
+## 12. License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

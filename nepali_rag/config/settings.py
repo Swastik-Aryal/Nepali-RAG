@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     collection_name: str = "nepali_docs"
 
     embedding_model: str = "intfloat/multilingual-e5-large"
-    reranker_model: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+    reranker_model: str = "BAAI/bge-reranker-v2-m3"
 
     llm_provider: str = "ollama"
     vllm_model: str = "google/gemma-4-E4B-it"
