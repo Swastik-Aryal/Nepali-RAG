@@ -3,3 +3,4 @@ include README.md
 include .env.example
 recursive-include nepali_rag *.py *.json
 include cli.py
+prune nepali_rag/data
