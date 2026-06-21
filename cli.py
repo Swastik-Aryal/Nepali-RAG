@@ -141,6 +141,15 @@ def cmd_serve(args):
     )
 
 
+def cmd_mcp(args):
+    """Start the MCP HTTP server."""
+    _setup_logging(args.verbose)
+
+    _status("Initializing models…")
+    from nepali_rag.mcp.server import run_server
+    run_server(no_init=args.no_init)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="nepali-rag",
@@ -192,6 +201,11 @@ def main():
     p_serve.add_argument("--port", type=int, default=8080, help="port (default: 8080)")
     p_serve.add_argument("--reload", action="store_true", help="enable auto-reload for development")
     p_serve.set_defaults(func=cmd_serve)
+
+    # mcp
+    p_mcp = subparsers.add_parser("mcp", parents=[common], help="start the MCP server (HTTP transport at http://localhost:8000)")
+    p_mcp.add_argument("--no-init", action="store_true", default=False, help="skip eager model loading; load models on first tool call instead")
+    p_mcp.set_defaults(func=cmd_mcp)
 
     args = parser.parse_args()
 

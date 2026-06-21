@@ -78,6 +78,9 @@ dependencies = [
 
     # LLM providers
     "openai>=1.0.0",
+
+    # MCP server
+    "mcp[cli]>=1.25.0",
 ]
 
 [project.optional-dependencies]
@@ -103,6 +106,7 @@ exclude = ["nepali_rag.tests*", "nepali_rag.data*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.txt", "*.md"]
+nepali_rag = ["py.typed", "*.pyi"]
 
 [tool.ruff]
 target-version = "py310"

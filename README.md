@@ -1,10 +1,19 @@
 # Nepali-RAG
 
-Retrieval Augmented Generation framework purpose-built for the Nepali language documents, articles, books etc.
+**Production-ready Retrieval-Augmented Generation framework purpose-built for the Nepali language, integratable into any LLM environment.**
 
-Plugable into any chatbot, search interface, or LLM wrapper to give your application grounded, citation-backed answers from Nepali documents. Supports **LLM tool-calling**, the model autonomously decides when document retrieval is needed..
+## Features
 
-**Why this exists:** Most RAG tooling assumes Latin-script languages. Nepali RAG handles the specific challenges of Devanagari text end-to-end.
+- **Devanagari-native pipeline** -- Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
+- **11+ document formats** -- PDF (OCR), DOCX, PPTX, XLSX, CSV, TXT, Markdown, HTML, EPUB, RTF, ODT, all handled automatically
+- **Hybrid retrieval + reranking** -- dense + sparse vectors fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision
+- **LLM tool-calling mode** -- the model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely
+- **Any LLM providers, one interface** -- Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.)
+- **Three ways to use it** -- Python library, CLI, or FastAPI server with full REST API
+- **MCP server**-- expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code etc. Essentially, any agent that support MCP)
+- **Conversation history support** -- multi-turn context for follow-up questions across all interfaces
+- **Batch ingestion** -- feed entire document collections into a single Qdrant collection in one call
+- **Fully configurable** -- chunk size, overlap, retrieval depth, reranking count, dense/sparse weights, temperature, model, provider, essentially everything is tunable via `.env`, code, or CLI flags
 
 ## Contents
 
@@ -13,14 +22,14 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
 3. [Quick Start](#3-quick-start)
    - [3.1 Ingest a document](#31-ingest-a-document)
    - [3.2 Query your documents](#32-query-your-documents)
-   - [3.3 Start the FastAPI server](#33-start-the-fastapi-server)
-4. [Configuration](#4-configuration)
-5. [CLI Reference](#5-cli-reference)
-6. [Supported Document Formats](#6-supported-document-formats)
-7. [LLM Providers](#7-llm-providers)
-8. [FastAPI Server Configuration](#8-fastapi-server-configuration)
-9. [Project Structure](#9-project-structure)
-10. [Component Details](#10-component-details)
+4. [FastAPI Server](#4-fastapi-server)
+5. [MCP Server](#5-mcp-server)
+6. [Configuration](#6-configuration)
+7. [CLI Reference](#7-cli-reference)
+8. [Supported Document Formats](#8-supported-document-formats)
+9. [LLM Providers](#9-llm-providers)
+10. [Project Structure](#10-project-structure)
+11. [Component Details](#11-component-details)
     - [i. Architecture](#i-architecture)
     - [ii. Document Ingestion](#ii-document-ingestion-nepali_ragingestion)
     - [iii. Text Preprocessing](#iii-text-preprocessing-nepali_ragpreprocessing)
@@ -32,10 +41,9 @@ Plugable into any chatbot, search interface, or LLM wrapper to give your applica
     - [ix. Tool-Calling Mode](#ix-tool-calling-mode)
     - [x. LLM Integration](#x-llm-integration-nepali_ragllm)
     - [xi. Document Pipeline](#xi-document-pipeline-nepali_ragpipeline)
-    - [xii. FastAPI Server](#xii-fastapi-server-nepali_ragapi)
-    - [xiii. RAG Configuration](#xiii-rag-configuration-nepali_ragconfig)
-11. [References](#11-references)
-12. [License](#12-license)
+    - [xii. RAG Configuration](#xii-rag-configuration-nepali_ragconfig)
+12. [References](#12-references)
+13. [License](#13-license)
 
 ## 1. Prerequisites
 
@@ -152,7 +160,9 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
   --chunk-overlap 2 \
   -v
 ```
+
 ---
+
 ### 3.2 Query your documents
 
 **Python (less control, requires `.env` file):**
@@ -273,10 +283,8 @@ nepali-rag query "नेपालको संविधानमा के ल�
   --api-key your-google-api-key \
   -v
 ```
----
-### 3.3 Start the FastAPI server
 
-**Terminal:**
+## 4. FastAPI Server
 
 ```bash
 # Uses .env from CWD by default
@@ -290,43 +298,66 @@ The API will be available at `http://localhost:8080`. Interactive docs at `http:
 
 > **Note:** The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
 
-## 4. Configuration
+Full API server documentation here: [API SERVER DOCUMENATION](./nepali_rag/api/README.md)
+
+## 5. MCP Server
+
+Nepali-RAG ships with an MCP (Model Context Protocol) server that exposes ingestion and retrieval as tools for AI agents. AI coding assistants (Claude Desktop, Cursor, Windsurf, Claude Code, VS Code, etc.) can call these tools directly without adopting the full Nepali-RAG framework.
+
+The server uses **Streamable HTTP transport** and listens at `http://localhost:8000/mcp` by default.
+
+### Starting the Server
+
+```bash
+# Eager mode (default) -- embedding model and reranker loaded at startup
+nepali-rag mcp
+
+```
+
+### Tools
+
+- **`ingest_document`** - Ingest one or more document files into a Qdrant collection for retrieval.
+- **`retrieve`** - Search a Qdrant collection and return reranked results.
+
+Full documentation including input/output schemas, storage guide, and configuration examples for all supported clients here: [MCP SERVER DOCUMENATION](./nepali_rag/mcp/README.md)
+
+## 6. Configuration
 
 Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can be overridden/managed through a `.env` file. See [`.env.example`](.env.example) for the full list.
 
-| Setting                     | Default                                        | Purpose                                                               |
-| --------------------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| `QDRANT_URL`              | *(empty)*                                    | Vector database connection URL                                        |
-| `QDRANT_API_KEY`          | *(empty)*                                    | Qdrant Cloud authentication key                                       |
-| `COLLECTION_NAME`         | `nepali_docs`                                | Default Qdrant collection                                             |
-| `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`             | Embedding model name                                                  |
-| `RERANKER_MODEL`          | `BAAI/bge-reranker-v2-m3` | Reranker model name                                                   |
-| `LLM_PROVIDER`            | `ollama`                                     | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic`      |
-| `VLLM_MODEL`              | `google/gemma-4-E4B-it`                      | Model for vLLM provider                                               |
-| `VLLM_BASE_URL`           | `http://localhost:8000/v1`                   | vLLM server endpoint                                                  |
-| `OPENAI_API_KEY`          | *(empty)*                                    | OpenAI API key (or key for any OpenAI-compatible provider)            |
-| `OPENAI_BASE_URL`         | *(empty)*                                    | Custom base URL for OpenAI-compatible providers (e.g. Groq, DeepSeek) |
-| `OPENAI_MODEL`            | `gpt-4o-mini`                                | Model for OpenAI / OpenAI-compatible provider                         |
-| `GOOGLE_API_KEY`          | *(empty)*                                    | Google API key for Gemini                                             |
-| `GEMINI_MODEL`            | `gemini-2.5-flash`                           | Model for Gemini provider                                             |
-| `OLLAMA_BASE_URL`         | `http://localhost:11434`                     | Ollama server endpoint                                                |
-| `OLLAMA_MODEL`            | `gemma4`                                     | Model for Ollama provider                                             |
-| `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`                       | Model for hugging-face-inference-api                                  |
-| `HF_BASE_URL`             | `https://router.huggingface.co/v1`           | hugging-face-inference endpoint                                       |
-| `HF_TOKEN`                | *(empty)*                                    | Your hugging-face api token                                           |
-| `ANTHROPIC_API_KEY`       | *(empty)*                                    | Anthropic API key for Claude                                          |
-| `ANTHROPIC_MODEL`         | `claude-opus-4-6`                   | Model for Anthropic provider                                          |
-| `TESSERACT_LANGUAGES`     | `nep`                                        | OCR language configuration                                            |
-| `CHUNK_SIZE`              | `256`                                        | Maximum chunk size in tokens                                          |
-| `CHUNK_OVERLAP_SENTENCES` | `2`                                          | Sentence overlap between chunks                                       |
-| `TOP_K_RETRIEVAL`         | `20`                                         | Hybrid search candidate count                                         |
-| `TOP_K_RERANK`            | `5`                                          | Final reranked result count                                           |
-| `DENSE_WEIGHT`            | `0.9`                                        | Dense score weight in hybrid search                                   |
-| `SPARSE_WEIGHT`           | `0.1`                                        | Sparse score weight in hybrid search                                  |
-| `LLM_TEMPERATURE`         | `0.3`                                        | LLM generation temperature                                            |
-| `USE_TOOLS`               | `true`                                       | Enable tool-calling mode                                              |
+| Setting                     | Default                              | Purpose                                                                         |
+| --------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
+| `QDRANT_URL`              | *(empty)*                          | Vector database connection URL                                                  |
+| `QDRANT_API_KEY`          | *(empty)*                          | Qdrant Cloud authentication key                                                 |
+| `COLLECTION_NAME`         | `nepali_docs`                      | Default Qdrant collection                                                       |
+| `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`   | Embedding model name                                                            |
+| `RERANKER_MODEL`          | `BAAI/bge-reranker-v2-m3`          | Reranker model name                                                             |
+| `LLM_PROVIDER`            | `ollama`                           | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic` |
+| `VLLM_MODEL`              | `google/gemma-4-E4B-it`            | Model for vLLM provider                                                         |
+| `VLLM_BASE_URL`           | `http://localhost:8000/v1`         | vLLM server endpoint                                                            |
+| `OPENAI_API_KEY`          | *(empty)*                          | OpenAI API key (or key for any OpenAI-compatible provider)                      |
+| `OPENAI_BASE_URL`         | *(empty)*                          | Custom base URL for OpenAI-compatible providers (e.g. Groq, DeepSeek)           |
+| `OPENAI_MODEL`            | `gpt-4o-mini`                      | Model for OpenAI / OpenAI-compatible provider                                   |
+| `GOOGLE_API_KEY`          | *(empty)*                          | Google API key for Gemini                                                       |
+| `GEMINI_MODEL`            | `gemini-2.5-flash`                 | Model for Gemini provider                                                       |
+| `OLLAMA_BASE_URL`         | `http://localhost:11434`           | Ollama server endpoint                                                          |
+| `OLLAMA_MODEL`            | `gemma4`                           | Model for Ollama provider                                                       |
+| `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`             | Model for hugging-face-inference-api                                            |
+| `HF_BASE_URL`             | `https://router.huggingface.co/v1` | hugging-face-inference endpoint                                                 |
+| `HF_TOKEN`                | *(empty)*                          | Your hugging-face api token                                                     |
+| `ANTHROPIC_API_KEY`       | *(empty)*                          | Anthropic API key for Claude                                                    |
+| `ANTHROPIC_MODEL`         | `claude-opus-4-6`                  | Model for Anthropic provider                                                    |
+| `TESSERACT_LANGUAGES`     | `nep`                              | OCR language configuration                                                      |
+| `CHUNK_SIZE`              | `256`                              | Maximum chunk size in tokens                                                    |
+| `CHUNK_OVERLAP_SENTENCES` | `2`                                | Sentence overlap between chunks                                                 |
+| `TOP_K_RETRIEVAL`         | `20`                               | Hybrid search candidate count                                                   |
+| `TOP_K_RERANK`            | `5`                                | Final reranked result count                                                     |
+| `DENSE_WEIGHT`            | `0.9`                              | Dense score weight in hybrid search                                             |
+| `SPARSE_WEIGHT`           | `0.1`                              | Sparse score weight in hybrid search                                            |
+| `LLM_TEMPERATURE`         | `0.3`                              | LLM generation temperature                                                      |
+| `USE_TOOLS`               | `true`                             | Enable tool-calling mode                                                        |
 
-## 5. CLI Reference
+## 7. CLI Reference
 
 ```
 nepali-rag ingest <file> [<file> ...]
@@ -359,9 +390,14 @@ nepali-rag serve
     --port PORT               port (default: 8080)
     --reload                  auto-reload for development
     -v                        enable debug logging
+
+nepali-rag mcp
+    --no-init                 (Not recommended)skip eager model loading (load on first tool call)
+    -v                        enable debug logging
+
 ```
 
-## 6. Supported Document Formats
+## 8. Supported Document Formats
 
 | Format                    | Extensions          | Method                     |
 | ------------------------- | ------------------- | -------------------------- |
@@ -377,18 +413,18 @@ nepali-rag serve
 | EPUB                      | `.epub`           | EbookLib                   |
 | OpenDocument              | `.odt`            | odfpy                      |
 
-## 7. LLM Providers
+## 9. LLM Providers
 
 The system supports six LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
 
-| Provider                 | Setup                                                    | Model                                                                               |
-| ------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **`ollama`**     | `ollama pull gemma4`                                   | Set `model = "gemma4"` OR any other model but in the ollama format.               |
-| **`vllm`**       | Start vLLM server with `--model google/gemma-4-E4B-it` | Set `model = "google/gemma-4-E4B-it"` OR any other model but in the vllm format.  |
-| **`openai`**     | Set `OPENAI_API_KEY` or pass `--api-key`             | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.      |
-| **`gemini`**     | Set `GOOGLE_API_KEY` or pass `--api-key`             | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
-| **`hf`**         | Set `HF_TOKEN` or pass `--api-key`                   | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.               |
-| **`anthropic`** | Set `ANTHROPIC_API_KEY` or pass `--api-key`          | Set `model = "claude-opus-4-6"` OR any Anthropic Claude model.           |
+| Provider                | Setup                                                    | Model                                                                               |
+| ----------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **`ollama`**    | `ollama pull gemma4`                                   | Set `model = "gemma4"` OR any other model but in the ollama format.               |
+| **`vllm`**      | Start vLLM server with `--model google/gemma-4-E4B-it` | Set `model = "google/gemma-4-E4B-it"` OR any other model but in the vllm format.  |
+| **`openai`**    | Set `OPENAI_API_KEY` or pass `--api-key`             | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.      |
+| **`gemini`**    | Set `GOOGLE_API_KEY` or pass `--api-key`             | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
+| **`hf`**        | Set `HF_TOKEN` or pass `--api-key`                   | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.               |
+| **`anthropic`** | Set `ANTHROPIC_API_KEY` or pass `--api-key`          | Set `model = "claude-opus-4-6"` OR any Anthropic Claude model.                    |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
 
@@ -442,284 +478,7 @@ nepali-rag query "नेपालको संविधानमा के ल�
 
 > **Note:** The base URL should point to the `/v1` endpoint (not `/v1/chat/completions`). The client appends `/chat/completions` automatically.
 
-## 8. FastAPI Server Configuration
-
-Start the server with `nepali-rag serve`. Interactive docs available at `http://localhost:8080/docs`.
-
-| Method   | Path                                        | Purpose                                      |
-| -------- | ------------------------------------------- | -------------------------------------------- |
-| `POST` | `/api/v1/upload`                          | Upload documents for ingestion               |
-| `POST` | `/api/v1/query`                           | Query with question and conversation history |
-| `GET`  | `/api/v1/health`                          | System health and LLM availability           |
-| `GET`  | `/api/v1/collections`                     | List all Qdrant collections                  |
-| `GET`  | `/api/v1/collections/{name}`              | Collection details                           |
-| `GET`  | `/api/v1/conversations`                   | List all persisted conversation IDs          |
-| `GET`  | `/api/v1/conversations/{conversation_id}` | Full turn history for a conversation         |
-
----
-
-### `POST /api/v1/upload`
-
-Upload and index one or more documents via `DocumentPipeline`. Each file is validated against supported formats, saved to a temporary directory, passed through the full ingest pipeline (load → normalize → chunk → embed → Qdrant), and then cleaned up.
-
-**Form parameters (multipart/form-data):**
-
-- **`files`** (required) - One or more files to upload. Must be a supported format (`.pdf`, `.docx`, `.txt`, `.md`, `.html`, etc.).
-- **`collection_name`** (optional) - Qdrant collection to index into. If omitted, `DocumentPipeline` auto-generates a `doc_<hex>` name.
-- **`chunk_size`** (optional) - Maximum number of tokens per chunk. Falls back to `settings.chunk_size` (256), overridden by `CHUNK_SIZE` in ENV.
-- **`chunk_overlap_sentences`** (optional) - Number of overlapping sentences between consecutive chunks. Falls back to `settings.chunk_overlap_sentences` (2), overridden by `CHUNK_OVERLAP_SENTENCES` in ENV.
-
-**Response fields:**
-
-- **`results`** - List of per-file dicts, each with `collection_name`, `filename`, `pages_extracted`, `chunks_created`, and `chunks_indexed`.
-- **`total_files`** - Number of files processed.
-- **`total_chunks_indexed`** - Sum of all chunks stored in Qdrant.
-
-**Errors:** `400` unsupported file format · `500` ingestion/indexing failure.
-
-**Example:**
-
-```bash
-curl -X POST http://localhost:8080/api/v1/upload \
-  -F "files=@document.pdf" \
-  -F "collection_name=my_docs" \
-  -F "chunk_size=512"
-```
-
-```json
-{
-    "results": [
-        {
-            "collection_name": "my_docs",
-            "filename": "document.pdf",
-            "pages_extracted": 4,
-            "chunks_created": 12,
-            "chunks_indexed": 12
-        }
-    ],
-    "total_files": 1,
-    "total_chunks_indexed": 12
-}
-```
-
----
-
-### `POST /api/v1/query`
-
-Run a RAG query: retrieve relevant chunks, generate an answer, and persist the conversation. The pipeline retrieves candidate passages from Qdrant, optionally reranks them, and feeds the context to the configured LLM for answer generation. Conversation turns are persisted to `api/conversations/<conversation_id>.json` so subsequent queries can leverage multi-turn context.
-
-**JSON body parameters:**
-
-- **`question`** (str, required) - The user's query. Must not be empty.
-- **`conversation_id`** (str, optional) - Unique conversation identifier. If omitted, a random 16-character hex ID is generated.
-- **`conversation_history`** (list, optional) - Explicit turn history (list of `{"role": "...", "content": "..."}` dicts) to replace any file-persisted history.
-- **`collection_name`** (str, optional) - Qdrant collection to search. Falls back to `settings.collection_name` (`nepali_docs`), overridden by `COLLECTION_NAME` in ENV.
-- **`top_k_retrieval`** (int, optional) - Hybrid-search candidate count. Falls back to `settings.top_k_retrieval` (20), overridden by `TOP_K_RETRIEVAL` in ENV.
-- **`top_k_rerank`** (int, optional) - Final result count after reranking. Falls back to `settings.top_k_rerank` (5), overridden by `TOP_K_RERANK` in ENV.
-- **`llm_provider`** (str, optional) - LLM provider override (e.g. `"ollama"`, `"openai"`, `"gemini"`, `"huggingface"`, `"vllm"`). Falls back to `settings.llm_provider`, overridden by `LLM_PROVIDER` in ENV.
-- **`llm_model`** (str, optional) - Model name override. Falls back to the provider-specific model in settings (e.g. `OLLAMA_MODEL`, `OPENAI_MODEL`, `GEMINI_MODEL`, etc. in ENV).
-- **`temperature`** (float, optional) - Sampling temperature. Falls back to `settings.llm_temperature` (0.3), overridden by `LLM_TEMPERATURE` in ENV.
-- **`use_tools`** (bool, optional) - Whether the LLM should decide if retrieval is needed. Falls back to `settings.use_tools` (`True`), overridden by `USE_TOOLS` in ENV.
-
-> **Note:** LLM credentials and connection details (API keys, base URLs) are not passed per-request - they are configured via environment variables / `settings.py`. See `.env.example` for the full list.
-
-**Response fields:**
-
-- **`answer`** - The generated response from the LLM (or formatted prompt in test mode).
-- **`sources`** - Retrieved chunks, each with `text`, `metadata`, `score`, and `rerank_score`.
-- **`context`** - The formatted context string fed to the LLM.
-- **`collection_name`** - The Qdrant collection that was queried.
-- **`conversation_id`** - The conversation ID (generated or provided).
-- **`test_mode`** - `true` if the LLM was unavailable and the response is a raw prompt.
-- **`used_tool_calling`** - `true` if the LLM invoked the `retrieve_documents` tool.
-
-**Errors:** `400` empty question · `503` LLM initialization failure · `500` query processing failure.
-
-**Example:**
-
-```bash
-curl -X POST http://localhost:8080/api/v1/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "question": "त्यहाँको जनसंख्या कति हो?",
-    "collection_name": "nepali_docs",
-    "conversation_history": [
-        {"role": "user", "content": "नेपालको राजधानी के हो?"},
-        {"role": "assistant", "content": "नेपालको राजधानी काठमाडौं हो।"}
-    ],
-    "top_k_retrieval": 10,
-    "top_k_rerank": 3
-  }'
-```
-
-```json
-{
-    "answer": "नेपालको राजधानी काठमाडौं हो।",
-    "sources": [
-        {
-            "text": "काठमाडौं नेपालको राजधानी हो...",
-            "metadata": {"source": "nepal_info.pdf", "page_number": 1, "chunk_index": 0},
-            "score": 0.87,
-            "rerank_score": 0.95
-        }
-    ],
-    "context": "[1](Source: nepal_info.pdf, Page: 1) काठमाडौं नेपालको राजधानी हो...",
-    "collection_name": "nepali_docs",
-    "conversation_id": "a1b2c3d4e5f67890",
-    "test_mode": false,
-    "used_tool_calling": true
-}
-```
-
----
-
-### `GET /api/v1/health`
-
-Return API health status, configured providers, and LLM reachability. Attempts to initialize the default LLM to determine reachability - no inference call is made, only the connection handshake is tested.
-
-**Response fields:**
-
-- **`status`** - Always `"ok"` if the API itself is running.
-- **`llm_provider`** - The configured LLM provider name (e.g. `"ollama"`, `"openai"`).
-- **`llm_available`** - `true` if LLM initialization succeeds without error.
-- **`embedding_model`** - The configured embedding model identifier.
-- **`default_collection`** - The default Qdrant collection name.
-
-**Example:**
-
-```bash
-curl http://localhost:8080/api/v1/health
-```
-
-```json
-{
-    "status": "ok",
-    "llm_provider": "ollama",
-    "llm_available": true,
-    "embedding_model": "intfloat/multilingual-e5-large",
-    "default_collection": "nepali_docs"
-}
-```
-
----
-
-### `GET /api/v1/collections`
-
-List all Qdrant collections with their point counts and statuses.
-
-**Response fields (list):** Each item contains:
-
-- **`name`** - The collection name.
-- **`points_count`** - Number of indexed points (chunks).
-- **`status`** - Collection status (e.g. `"green"`).
-
-**Errors:** `500` Qdrant connection or metadata fetch failure.
-
-**Example:**
-
-```bash
-curl http://localhost:8080/api/v1/collections
-```
-
-```json
-[
-    {
-        "name": "nepali_docs",
-        "points_count": 142,
-        "status": "green"
-    },
-    {
-        "name": "doc_a1b2c3d4e5f6",
-        "points_count": 38,
-        "status": "green"
-    }
-]
-```
-
----
-
-### `GET /api/v1/collections/{name}`
-
-Return point count and status for a single Qdrant collection.
-
-**Path parameters:**
-
-- **`name`** (str, required) - The exact Qdrant collection name to look up.
-
-**Response fields:**
-
-- **`name`** - The collection name (echoed back).
-- **`points_count`** - Number of indexed points (chunks).
-- **`status`** - Collection status (e.g. `"green"`).
-
-**Errors:** `500` collection does not exist or Qdrant connection failure.
-
-**Example:**
-
-```bash
-curl http://localhost:8080/api/v1/collections/nepali_docs
-```
-
-```json
-{
-    "name": "nepali_docs",
-    "points_count": 142,
-    "status": "green"
-}
-```
-
----
-
-### `GET /api/v1/conversations`
-
-List all persisted conversation IDs. Scans `api/conversations/` for `*.json` files and returns each file's stem (basename without the `.json` extension). Returns an empty list when no conversations have been persisted yet.
-
-**Response:** Sorted list of conversation ID strings.
-
-**Example:**
-
-```bash
-curl http://localhost:8080/api/v1/conversations
-```
-
-```json
-["061004efc64840f7", "a3f8b2e1c9d74501", "qwen_fun"]
-```
-
----
-
-### `GET /api/v1/conversations/{conversation_id}`
-
-Return the full turn history for a single persisted conversation.
-
-**Path parameters:**
-
-- **`conversation_id`** (str, required) - The bare conversation ID (filename stem), e.g. `061004efc64840f7` - **without** the `.json` suffix.
-
-**Response fields:**
-
-- **`conversation_id`** - The requested conversation ID (echoed back).
-- **`turns`** - Ordered list of `{"role": "...", "content": "..."}` dicts representing the full conversation history.
-
-**Errors:** `404` conversation not found · `500` file cannot be parsed as valid JSON.
-
-**Example:**
-
-```bash
-curl http://localhost:8080/api/v1/conversations/061004efc64840f7
-```
-
-```json
-{
-    "conversation_id": "061004efc64840f7",
-    "turns": [
-        {"role": "user", "content": "नेपालको राजधानी के हो?"},
-        {"role": "assistant", "content": "नेपालको राजधानी काठमाडौं हो।"}
-    ]
-}
-```
-
-## 9. Project Structure
+## 10. Project Structure
 
 ```
 nepali-rag/
@@ -735,6 +494,8 @@ nepali-rag/
 │   ├── rag/                     # RAG chain (always-retrieve + tool-calling)
 │   ├── llm/                     # Multi-provider LLM factory
 │   ├── pipeline/                # Full document ingestion orchestrator
+│   ├── mcp/                     # MCP server (streamable-http transport, 2 tools)
+│   │   └── server.py            # Tool definitions, model lifecycle, entry point
 │   └── api/                     # FastAPI HTTP layer
 │       ├── main.py              # App setup, lifespan, CORS
 │       ├── routes.py            # Upload, query, health, collection endpoints
@@ -747,7 +508,7 @@ nepali-rag/
 └── README.md
 ```
 
-## 10. Component Details
+## 11. Component Details
 
 ### i. Architecture
 
@@ -836,11 +597,12 @@ Two-stage retrieval pipeline:
 - **Reranker model**: [`BAAI/bge-reranker-v2-m3`](https://huggingface.co/BAAI/bge-reranker-v2-m3) - a multilingual cross-encoder reranker from the BGE family, providing strong relevance scoring across 100+ languages including Nepali.
 - **Library**: **sentence-transformers** (`CrossEncoder`).
 
-**Why this model:** The reranker is built on BGE-M3 [[2]](#ref-2)[[3]](#ref-3), which uses **XLM-RoBERTa** as its backbone — a model pretrained on CommonCrawl data covering 100+ languages including Nepali (Devanagari script). This gives it a strong foundation for Nepali text understanding out of the box. In the BGE-M3 paper [[2]](#ref-2), BGE-M3 achieved state-of-the-art results on multilingual (MIRACL) and cross-lingual (MKQA) benchmarks, outperforming prior models like mE5-large and E5-mistral-7b across 18 languages. The `bge-reranker-v2-m3` variant inherits this multilingual capability while being lightweight (0.6B params), fast to infer, and easy to deploy — the best performance-to-efficiency balance for multilingual reranking.
+**Why this model:** The reranker is built on BGE-M3 [[2]](#ref-2)[[3]](#ref-3), which uses **XLM-RoBERTa** as its backbone, a model pretrained on CommonCrawl data covering 100+ languages including Nepali (Devanagari script). This gives it a strong foundation for Nepali text understanding out of the box. In the BGE-M3 paper [[2]](#ref-2), BGE-M3 achieved state-of-the-art results on multilingual (MIRACL) and cross-lingual (MKQA) benchmarks, outperforming prior models like mE5-large and E5-mistral-7b across 18 languages. The `bge-reranker-v2-m3` variant inherits this multilingual capability while being lightweight (0.6B params), fast to infer, and easy to deploy, the best performance-to-efficiency balance for multilingual reranking.
 
 **Other strong reranker options:**
-- **Qwen3-Embedding-0.6B** [[6]](#ref-6) — Matches BGE-M3's parameter count (0.6B) but scores slightly lower on the MTEB multilingual reranking subtask (61.41 vs 62.79). Choose this if you are already using the Qwen3 ecosystem and prefer model-family consistency across embedding and reranking.
-- **bge-reranker-v2-gemma** [[5]](#ref-5) — A 3B LLM-based reranker built on Google's Gemma-2B. Delivers stronger ranking accuracy at the cost of higher memory and slower inference. Choose this when throughput is not the bottleneck and maximum ranking precision is the priority.
+
+- **Qwen3-Embedding-0.6B** [[6]](#ref-6) - Matches BGE-M3's parameter count (0.6B) but scores slightly lower on the MTEB multilingual reranking subtask (61.41 vs 62.79). Choose this if you are already using the Qwen3 ecosystem and prefer model-family consistency across embedding and reranking.
+- **bge-reranker-v2-gemma** [[5]](#ref-5) - A 3B LLM-based reranker built on Google's Gemma-2B. Delivers stronger ranking accuracy at the cost of higher memory and slower inference. Choose this when throughput is not the bottleneck and maximum ranking precision is the priority.
 
 ---
 
@@ -885,7 +647,7 @@ A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatM
 | **OpenAI-compatible** (Groq, DeepSeek, etc.) | `ChatOpenAI` (custom `base_url`)        | *(varies by provider)*  |
 | **Gemini**                                   | `ChatGoogleGenerativeAI`                  | `gemini-2.5-flash`      |
 | **Hugging Face (HF)**                        | `ChatOpenAI` (OpenAI-compatible endpoint) | `Qwen/Qwen3.6-35B-A3B`  |
-| **Anthropic**                                | `ChatAnthropic`                           | `claude-opus-4-6` |
+| **Anthropic**                                | `ChatAnthropic`                           | `claude-opus-4-6`       |
 
 All providers expose the same interface - callers use `get_llm()` and never import provider modules directly.
 
@@ -905,35 +667,24 @@ load_document() → normalize_text() → chunk_pages() → embed_documents() →
 
 ---
 
-### xii. FastAPI Server (`nepali_rag/api/`)
-
-A REST API layer built with **FastAPI** and **Uvicorn**:
-
-- **Lifespan initialization**: The embedding model and reranker are loaded once at server startup and shared across all requests via `app.state`, avoiding per-request loading overhead.
-- **Conversation persistence**: Each query session is tracked by a `conversation_id`. Conversation history is stored as JSON files in `nepali_rag/api/conversations/` and automatically loaded/appended on subsequent queries.
-- **Graceful fallback**: If the LLM fails at connection or invocation time, the API falls back to test mode rather than returning a 500 error.
-- **CORS**: Enabled for all origins to support frontend integrations.
-
----
-
-### xiii. RAG Configuration (`nepali_rag/config/`)
+### xii. RAG Configuration (`nepali_rag/config/`)
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 
-## 11. References
+## 12. References
 
-<a id="ref-1"></a>1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
+`<a id="ref-1"></a>`1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
 
-<a id="ref-2"></a>2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
+`<a id="ref-2"></a>`2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
 
-<a id="ref-3"></a>3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
+`<a id="ref-3"></a>`3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
 
-<a id="ref-4"></a>4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
+`<a id="ref-4"></a>`4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
 
-<a id="ref-5"></a>5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
+`<a id="ref-5"></a>`5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
 
-<a id="ref-6"></a>6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
+`<a id="ref-6"></a>`6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
 
-## 12. License
+## 13. License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
