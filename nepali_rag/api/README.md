@@ -41,7 +41,6 @@ Upload and index one or more documents via `DocumentPipeline`. Each file is vali
 - **`files`** (required) - One or more files to upload. Must be a supported format (`.pdf`, `.docx`, `.txt`, `.md`, `.html`, etc.).
 - **`collection_name`** (optional) - Qdrant collection to index into. If omitted, `DocumentPipeline` auto-generates a `doc_<hex>` name.
 - **`chunk_size`** (optional) - Maximum number of tokens per chunk. Falls back to `settings.chunk_size` (256), overridden by `CHUNK_SIZE` in ENV.
-- **`chunk_overlap_sentences`** (optional) - Number of overlapping sentences between consecutive chunks. Falls back to `settings.chunk_overlap_sentences` (2), overridden by `CHUNK_OVERLAP_SENTENCES` in ENV.
 
 **Response fields:**
 

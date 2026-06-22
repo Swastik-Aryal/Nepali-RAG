@@ -37,8 +37,7 @@ def cmd_ingest(args):
         embedding_model=embedding_model,
         vector_store=store,
         collection_name=args.collection,
-        chunk_size=args.chunk_size,
-        chunk_overlap_sentences=args.chunk_overlap,
+        chunk_size=args.chunk_size
     )
 
     _status("Ingesting files...")
@@ -173,7 +172,6 @@ def main():
     p_ingest.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
     p_ingest.add_argument("-c", "--collection", default="nepali_docs", help="target Qdrant collection name (default: nepali_docs)")
     p_ingest.add_argument("--chunk-size", type=int, default=256, help="token chunk size (default: 256)")
-    p_ingest.add_argument("--chunk-overlap", type=int, default=2, help="sentence overlap between chunks (default: 2)")
     p_ingest.set_defaults(func=cmd_ingest)
 
     # query 

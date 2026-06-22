@@ -56,7 +56,6 @@ Takes one or more document file paths (PDF, image, Office, text, etc.), extracts
 - `qdrant_path` or `qdrant_url` (one required): path to a local Qdrant storage directory, or URL of a remote Qdrant server (`qdrant_api_key` optional for remote). Defaults to local embedded Qdrant with no external infra.
 - `collection_name` (optional, auto-generated if omitted): Qdrant collection name (e.g. `session_a3f8b2c1`). Auto-generated names include a random hash to avoid collisions.
 - `chunk_size` (optional, default `256`): max tokens per chunk before embedding.
-- `chunk_overlap_sentences` (optional, default `2`): overlapping sentences between consecutive chunks to preserve boundary context.
 
 **Output:** collection name, qdrant storage path, and per-file stats (pages extracted, chunks created, chunks indexed).
 

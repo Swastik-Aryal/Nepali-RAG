@@ -17,6 +17,7 @@ _reranker = None
 # Local embedded Qdrant locks the storage directory, so only one QdrantClient
 # can open a given path at a time. Caching ensures ingest and retrieve share
 # the same client instead of fighting over the lock.
+# pyrefly: ignore [unknown-name]
 _qdrant_clients: dict[str, "QdrantClient"] = {}
 
 
@@ -120,14 +121,13 @@ def _create_qdrant_store(
     )
 
 
-def _do_ingest(store, embedding_model, file_paths, chunk_size, chunk_overlap_sentences):
+def _do_ingest(store, embedding_model, file_paths, chunk_size):
     """Synchronous ingestion logic (runs in thread)."""
     from nepali_rag.pipeline.document_pipeline import DocumentPipeline
     pipeline = DocumentPipeline(
         embedding_model=embedding_model,
         vector_store=store,
-        chunk_size=chunk_size,
-        chunk_overlap_sentences=chunk_overlap_sentences,
+        chunk_size=chunk_size
     )
     return pipeline.ingest_batch(file_paths)
 
@@ -150,8 +150,7 @@ async def ingest_document(
     collection_name: str | None = None,
     qdrant_url: str | None = None,
     qdrant_api_key: str | None = None,
-    chunk_size: int = 256,
-    chunk_overlap_sentences: int = 2,
+    chunk_size: int = 256
 ) -> dict:
     """Ingest one or more Nepali language documents into a Qdrant collection for retrival later on.
     IMPORTANT: This MCP server runs locally on the user's machine.
@@ -190,8 +189,7 @@ async def ingest_document(
             When provided, qdrant_path is not needed. Ask the user before using this.
         qdrant_api_key: API key for remote Qdrant. Only used with qdrant_url.
         chunk_size: Maximum number of tokens per chunk (default: 256).
-        chunk_overlap_sentences: Number of overlapping sentences between consecutive
-            chunks (default: 2).
+        
     """
     try:
         if collection_name is None:
@@ -199,7 +197,7 @@ async def ingest_document(
         store = _create_qdrant_store(collection_name, qdrant_path, qdrant_url, qdrant_api_key)
         embedding_model = _get_embedding_model()
         results = await asyncio.to_thread(
-            _do_ingest, store, embedding_model, file_paths, chunk_size, chunk_overlap_sentences
+            _do_ingest, store, embedding_model, file_paths, chunk_size
         )
         total_indexed = sum(r["chunks_indexed"] for r in results)
         return {

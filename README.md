@@ -4,16 +4,16 @@
 
 ## Features
 
-- **Devanagari-native pipeline** -- Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
-- **11+ document formats** -- PDF (OCR), DOCX, PPTX, XLSX, CSV, TXT, Markdown, HTML, EPUB, RTF, ODT, all handled automatically
-- **Hybrid retrieval + reranking** -- dense + sparse vectors fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision
-- **LLM tool-calling mode** -- the model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely
-- **Any LLM providers, one interface** -- Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.)
-- **Three ways to use it** -- Python library, CLI, or FastAPI server with full REST API
-- **MCP server**-- expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code etc. Essentially, any agent that support MCP)
-- **Conversation history support** -- multi-turn context for follow-up questions across all interfaces
-- **Batch ingestion** -- feed entire document collections into a single Qdrant collection in one call
-- **Fully configurable** -- chunk size, overlap, retrieval depth, reranking count, dense/sparse weights, temperature, model, provider, essentially everything is tunable via `.env`, code, or CLI flags
+- **Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
+- **11+ document formats**: PDF (OCR), DOCX, PPTX, XLSX, CSV, TXT, Markdown, HTML, EPUB, RTF, ODT, all handled automatically.
+- **Hybrid retrieval + reranking**: Dense + sparse vectors fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. Research-backed [embedding](#v-embeddings-nepali_ragembeddings) and [reranker](#vii-retrieval-nepali_ragretrieval) model choices.
+- **LLM tool-calling mode**: the model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
+- **Any LLM providers, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
+- **Three ways to use it**: Python library, CLI, or FastAPI server with full REST API.
+- **MCP server**: expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code etc. Essentially, any agent that support MCP).
+- **Conversation history support**: multi-turn context for follow-up questions across all interfaces.
+- **Batch ingestion**: feed entire document collections into a single Qdrant collection in one call.
+- **Fully configurable**: chunk size, retrieval depth, reranking count, dense/sparse weights, temperature, model, provider, essentially everything is tunable via `.env`, code, or CLI flags.
 
 ## Contents
 
@@ -131,7 +131,6 @@ pipeline = DocumentPipeline(
     embedding_model=embedding_model,
     vector_store=store,
     chunk_size=256,
-    chunk_overlap_sentences=2,
 )
 
 # Single document
@@ -157,7 +156,6 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
   --qdrant-api-key your-qdrant-api-key \
   -c my_collection \
   --chunk-size 256 \
-  --chunk-overlap 2 \
   -v
 ```
 
@@ -325,37 +323,36 @@ Full documentation including input/output schemas, storage guide, and configurat
 
 Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can be overridden/managed through a `.env` file. See [`.env.example`](.env.example) for the full list.
 
-| Setting                     | Default                              | Purpose                                                                         |
-| --------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
-| `QDRANT_URL`              | *(empty)*                          | Vector database connection URL                                                  |
-| `QDRANT_API_KEY`          | *(empty)*                          | Qdrant Cloud authentication key                                                 |
-| `COLLECTION_NAME`         | `nepali_docs`                      | Default Qdrant collection                                                       |
-| `EMBEDDING_MODEL`         | `intfloat/multilingual-e5-large`   | Embedding model name                                                            |
-| `RERANKER_MODEL`          | `BAAI/bge-reranker-v2-m3`          | Reranker model name                                                             |
-| `LLM_PROVIDER`            | `ollama`                           | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic` |
-| `VLLM_MODEL`              | `google/gemma-4-E4B-it`            | Model for vLLM provider                                                         |
-| `VLLM_BASE_URL`           | `http://localhost:8000/v1`         | vLLM server endpoint                                                            |
-| `OPENAI_API_KEY`          | *(empty)*                          | OpenAI API key (or key for any OpenAI-compatible provider)                      |
-| `OPENAI_BASE_URL`         | *(empty)*                          | Custom base URL for OpenAI-compatible providers (e.g. Groq, DeepSeek)           |
-| `OPENAI_MODEL`            | `gpt-4o-mini`                      | Model for OpenAI / OpenAI-compatible provider                                   |
-| `GOOGLE_API_KEY`          | *(empty)*                          | Google API key for Gemini                                                       |
-| `GEMINI_MODEL`            | `gemini-2.5-flash`                 | Model for Gemini provider                                                       |
-| `OLLAMA_BASE_URL`         | `http://localhost:11434`           | Ollama server endpoint                                                          |
-| `OLLAMA_MODEL`            | `gemma4`                           | Model for Ollama provider                                                       |
-| `HF_MODEL_NAME`           | `Qwen/Qwen3.6-35B-A3B`             | Model for hugging-face-inference-api                                            |
-| `HF_BASE_URL`             | `https://router.huggingface.co/v1` | hugging-face-inference endpoint                                                 |
-| `HF_TOKEN`                | *(empty)*                          | Your hugging-face api token                                                     |
-| `ANTHROPIC_API_KEY`       | *(empty)*                          | Anthropic API key for Claude                                                    |
-| `ANTHROPIC_MODEL`         | `claude-opus-4-6`                  | Model for Anthropic provider                                                    |
-| `TESSERACT_LANGUAGES`     | `nep`                              | OCR language configuration                                                      |
-| `CHUNK_SIZE`              | `256`                              | Maximum chunk size in tokens                                                    |
-| `CHUNK_OVERLAP_SENTENCES` | `2`                                | Sentence overlap between chunks                                                 |
-| `TOP_K_RETRIEVAL`         | `20`                               | Hybrid search candidate count                                                   |
-| `TOP_K_RERANK`            | `5`                                | Final reranked result count                                                     |
-| `DENSE_WEIGHT`            | `0.9`                              | Dense score weight in hybrid search                                             |
-| `SPARSE_WEIGHT`           | `0.1`                              | Sparse score weight in hybrid search                                            |
-| `LLM_TEMPERATURE`         | `0.3`                              | LLM generation temperature                                                      |
-| `USE_TOOLS`               | `true`                             | Enable tool-calling mode                                                        |
+| Setting                 | Default                              | Purpose                                                                         |
+| ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
+| `QDRANT_URL`          | *(empty)*                          | Vector database connection URL                                                  |
+| `QDRANT_API_KEY`      | *(empty)*                          | Qdrant Cloud authentication key                                                 |
+| `COLLECTION_NAME`     | `nepali_docs`                      | Default Qdrant collection                                                       |
+| `EMBEDDING_MODEL`     | `intfloat/multilingual-e5-large`   | Embedding model name                                                            |
+| `RERANKER_MODEL`      | `BAAI/bge-reranker-v2-m3`          | Reranker model name                                                             |
+| `LLM_PROVIDER`        | `ollama`                           | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic` |
+| `VLLM_MODEL`          | `google/gemma-4-E4B-it`            | Model for vLLM provider                                                         |
+| `VLLM_BASE_URL`       | `http://localhost:8000/v1`         | vLLM server endpoint                                                            |
+| `OPENAI_API_KEY`      | *(empty)*                          | OpenAI API key (or key for any OpenAI-compatible provider)                      |
+| `OPENAI_BASE_URL`     | *(empty)*                          | Custom base URL for OpenAI-compatible providers (e.g. Groq, DeepSeek)           |
+| `OPENAI_MODEL`        | `gpt-4o-mini`                      | Model for OpenAI / OpenAI-compatible provider                                   |
+| `GOOGLE_API_KEY`      | *(empty)*                          | Google API key for Gemini                                                       |
+| `GEMINI_MODEL`        | `gemini-2.5-flash`                 | Model for Gemini provider                                                       |
+| `OLLAMA_BASE_URL`     | `http://localhost:11434`           | Ollama server endpoint                                                          |
+| `OLLAMA_MODEL`        | `gemma4`                           | Model for Ollama provider                                                       |
+| `HF_MODEL_NAME`       | `Qwen/Qwen3.6-35B-A3B`             | Model for hugging-face-inference-api                                            |
+| `HF_BASE_URL`         | `https://router.huggingface.co/v1` | hugging-face-inference endpoint                                                 |
+| `HF_TOKEN`            | *(empty)*                          | Your hugging-face api token                                                     |
+| `ANTHROPIC_API_KEY`   | *(empty)*                          | Anthropic API key for Claude                                                    |
+| `ANTHROPIC_MODEL`     | `claude-opus-4-6`                  | Model for Anthropic provider                                                    |
+| `TESSERACT_LANGUAGES` | `nep`                              | OCR language configuration                                                      |
+| `CHUNK_SIZE`          | `256`                              | Maximum chunk size in tokens                                                    |
+| `TOP_K_RETRIEVAL`     | `20`                               | Hybrid search candidate count                                                   |
+| `TOP_K_RERANK`        | `5`                                | Final reranked result count                                                     |
+| `DENSE_WEIGHT`        | `0.9`                              | Dense score weight in hybrid search                                             |
+| `SPARSE_WEIGHT`       | `0.1`                              | Sparse score weight in hybrid search                                            |
+| `LLM_TEMPERATURE`     | `0.3`                              | LLM generation temperature                                                      |
+| `USE_TOOLS`           | `true`                             | Enable tool-calling mode                                                        |
 
 ## 7. CLI Reference
 
@@ -365,7 +362,6 @@ nepali-rag ingest <file> [<file> ...]
     --qdrant-api-key KEY      (required) Qdrant API key
     -c, --collection NAME     collection name (default: nepali_docs)
     --chunk-size N            token chunk size (default: 256)
-    --chunk-overlap N         sentence overlap (default: 2)
     -v                        enable debug logging
 
 nepali-rag query "<question>"
@@ -516,7 +512,7 @@ nepali-rag/
 
 ### ii. Document Ingestion (`nepali_rag/ingestion/`)
 
-Handles loading and text extraction from 11+ document formats. PDFs are rendered page-by-page to 300 DPI images using **PyMuPDF** (`fitz`) and processed through **Tesseract OCR** with Nepali (`nep`) + English (`eng`) language data. Other formats use dedicated parsers:
+Handles loading and text extraction from 11+ document formats. PDFs are rendered page-by-page to 300 DPI images using **PyMuPDF** (`fitz`) and processed through **Tesseract OCR** with Nepali (`nep`) language data. Other formats use dedicated parsers:
 
 | Library                                   | Formats                      |
 | ----------------------------------------- | ---------------------------- |
@@ -547,12 +543,17 @@ Normalizes raw extracted text for consistent downstream processing:
 
 ### iv. Chunking (`nepali_rag/chunking/`)
 
-A two-level, structure-aware chunker that respects both paragraph boundaries and Nepali sentence delimiters (purna viram `।`, double danda `॥`, and standard `.`, `!`, `?`).
+A custom sentence-aware balancing pipeline (no LangChain dependency) that respects paragraph boundaries, Nepali sentence delimiters (purna viram `।`, double danda `॥`, `!`, `?` etc.), and token limits:
 
-- **Level 1**: **LangChain's `RecursiveCharacterTextSplitter`** splits on structural separators (`\n\n`, `\n`, ) to keep paragraphs intact. A post-processing pass (`_ensure_sentence_boundaries`) trims every block to end on a sentence delimiter, carrying incomplete fragments forward.
-- **Level 2**: Oversized blocks are split at sentence boundaries with configurable overlap (default: 2 sentences).
+1. **Structural split :** recursively splits each page on `\n\n` then `\n` to seed initial chunks. Sentence fragments at block boundaries are carried forward and joined with the next block's first sentence, ensuring every chunk begins and ends with a complete sentence.
+2. **Balancing pass :** walks chunks front-to-back enforcing two rules until both hold:
+
+   - **Too big** (`> chunk_size`): trailing whole sentences are pushed into the next chunk. If a single sentence still overflows, it is split in half, the first half stays, and the **full sentence is repeated** at the start of the next chunk (overlap, tracked via `has_overlap`). For massive sentences (> chunk_size), a hard token-boundary split is used as last resort.
+   - **Too small** (`< chunk_size / 2`): the next chunk is merged into the current one, bridging page boundaries when needed. If merging would leave the current chunk still undersized, a partial (token-prefix) copy of the next chunk's first sentence is appended (creating another overlap region).
+
 - **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model (`intfloat/multilingual-e5-large`) to count tokens accurately. Default chunk size is **256 tokens** (half the model's 512-token context limit).
-- Small blocks below half the chunk size are merged with neighbors to avoid tiny fragments.
+- **Overlap handling**: Mid-sentence splits repeat the full sentence at the start of the following chunk, preserving context continuity across chunk boundaries.
+- **Multi-page chunks**: `page_number` metadata joins pages with `&` (e.g., `"3&4"`) when a chunk spans pages.
 
 ---
 
@@ -574,7 +575,7 @@ A two-level, structure-aware chunker that respects both paragraph boundaries and
 - **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.9 dense, 0.1 sparse).
 - **Library**: `qdrant-client`.
 
-> **P.S.** Current setup only supports *Qdrant Cloud*. For local/docker Qdrant setups use
+> **P.S.** Current setup(except MCP) only supports *Qdrant Cloud*. For local/docker Qdrant setups use
 
 ```bash
 from nepali_rag import QdrantStore
@@ -673,17 +674,17 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 
 ## 12. References
 
-<a id="ref-1"></a> 1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
+`<a id="ref-1"></a>` 1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
 
-<a id="ref-2"></a> 2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
+`<a id="ref-2"></a>` 2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
 
-<a id="ref-3"></a> 3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
+`<a id="ref-3"></a>` 3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
 
-<a id="ref-4"></a> 4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
+`<a id="ref-4"></a>` 4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
 
-<a id="ref-5"></a> 5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
+`<a id="ref-5"></a>` 5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
 
-<a id="ref-6"></a> 6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
+`<a id="ref-6"></a>` 6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
 
 ## 13. License
 

@@ -51,7 +51,6 @@ async def upload_documents(
     files: list[UploadFile] = File(...),
     collection_name: str | None = Form(default=None),
     chunk_size: int | None = Form(default=None),
-    chunk_overlap_sentences: int | None = Form(default=None),
 ):
     """Upload and index one or more documents via ``DocumentPipeline``.
 
@@ -70,10 +69,6 @@ async def upload_documents(
             Defaults to ``None``. If ``None``, falls back to
             ``settings.chunk_size`` (256), overridden by ``CHUNK_SIZE`` in ENV
             if present.
-        - chunk_overlap_sentences (int, optional): Number of overlapping sentences between
-            consecutive chunks. Defaults to ``None``. If ``None``, falls back to
-            ``settings.chunk_overlap_sentences`` (2), overridden by
-            ``CHUNK_OVERLAP_SENTENCES`` in ENV if present.
 
     Returns:
         JSON dict containing:
@@ -137,7 +132,6 @@ async def upload_documents(
             embedding_model=request.app.state.embedding_model,
             collection_name=collection_name,
             chunk_size=chunk_size,
-            chunk_overlap_sentences=chunk_overlap_sentences,
         )
         raw_results = pipeline.ingest_batch(saved_paths)
 

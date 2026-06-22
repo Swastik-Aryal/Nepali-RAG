@@ -28,8 +28,6 @@ class DocumentPipeline:
             Defaults to ``None``.
         - chunk_size (int, optional): Maximum number of tokens per chunk.
             Defaults to ``settings.chunk_size`` (256).
-        - chunk_overlap_sentences (int, optional): Number of overlapping sentences between
-            consecutive chunks. Defaults to ``settings.chunk_overlap_sentences`` (2).
     """
 
     def __init__(
@@ -37,8 +35,7 @@ class DocumentPipeline:
         embedding_model: NepaliEmbeddingModel = None,
         vector_store: QdrantStore = None,
         collection_name: str = None,
-        chunk_size: int = None,
-        chunk_overlap_sentences: int = None,
+        chunk_size: int = None
     ):
         """Configure pipeline dependencies and chunking parameters.
 
@@ -53,11 +50,8 @@ class DocumentPipeline:
             Defaults to ``None``.
         - chunk_size (int, optional): Maximum number of tokens per chunk.
             Defaults to ``settings.chunk_size`` (256).
-        - chunk_overlap_sentences (int, optional): Number of overlapping sentences between
-            consecutive chunks. Defaults to ``settings.chunk_overlap_sentences`` (2).
         """
         self.chunk_size = chunk_size or settings.chunk_size
-        self.chunk_overlap_sentences = chunk_overlap_sentences or settings.chunk_overlap_sentences
         self.collection_name = collection_name
         self._embedding_model = embedding_model
         self._vector_store = vector_store
@@ -100,7 +94,6 @@ class DocumentPipeline:
         chunks = chunk_pages(
             pages,
             chunk_size=self.chunk_size,
-            overlap_sentences=self.chunk_overlap_sentences,
         )
         chunks_created = len(chunks)
 
