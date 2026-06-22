@@ -674,17 +674,17 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 
 ## 12. References
 
-`<a id="ref-1"></a>` 1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
+<a id="ref-1"></a> 1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
 
-`<a id="ref-2"></a>` 2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
+<a id="ref-2"></a> 2. Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). *BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation*. arXiv:2402.03216. [https://arxiv.org/html/2402.03216v5](https://arxiv.org/html/2402.03216v5)
 
-`<a id="ref-3"></a>` 3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
+<a id="ref-3"></a> 3. BAAI. *BAAI/bge-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
 
-`<a id="ref-4"></a>` 4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
+<a id="ref-4"></a> 4. BAAI. *BAAI/bge-reranker-v2-m3*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
 
-`<a id="ref-5"></a>` 5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
+<a id="ref-5"></a> 5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
 
-`<a id="ref-6"></a>` 6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
+<a id="ref-6"></a> 6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
 
 ## 13. License
 
