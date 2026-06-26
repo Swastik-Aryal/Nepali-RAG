@@ -26,6 +26,7 @@ class QdrantStore:
     """Qdrant client wrapper for chunk upsert and hybrid retrieval.
 
     Args:
+        - vector_size (int): Dimensionality of the dense embedding vectors.
         - collection_name (str, optional): Name of the Qdrant collection to use.
             Defaults to ``settings.collection_name`` (nepali_docs).
         - url (str, optional): URL of the Qdrant server.
@@ -38,6 +39,7 @@ class QdrantStore:
 
     def __init__(
         self,
+        vector_size: int,
         collection_name: str = None,
         url: str = None,
         api_key: str = None,
@@ -45,6 +47,7 @@ class QdrantStore:
     ):
         """Connect to Qdrant and ensure the collection exists.
 
+        - vector_size (int): Dimensionality of the dense embedding vectors.
         - collection_name (str, optional): Name of the Qdrant collection to use.
             Defaults to ``settings.collection_name`` (nepali_docs).
         - url (str, optional): URL of the Qdrant server.
@@ -57,6 +60,7 @@ class QdrantStore:
         """
 
         self.collection_name = collection_name or settings.collection_name
+        self.vector_size = vector_size
         if client is not None:
             self.client = client
         else:
@@ -66,7 +70,7 @@ class QdrantStore:
         self._ensure_collection()
 
     def _ensure_collection(self):
-        """Create the dense (1024-dim cosine) + sparse collection if missing."""
+        """Create the dense + sparse collection if missing."""
         collections = [c.name for c in self.client.get_collections().collections]
         if self.collection_name in collections:
             return
@@ -74,7 +78,7 @@ class QdrantStore:
         self.client.create_collection(
             collection_name=self.collection_name,
             vectors_config={
-                "dense": VectorParams(size=1024, distance=Distance.COSINE),
+                "dense": VectorParams(size=self.vector_size, distance=Distance.COSINE),
             },
             sparse_vectors_config={
                 "sparse": SparseVectorParams(),

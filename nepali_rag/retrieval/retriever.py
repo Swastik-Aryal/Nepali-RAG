@@ -33,7 +33,7 @@ class Retriever:
             default ``Reranker`` is created. Defaults to ``None``.
         """
         self.embedding_model = embedding_model or NepaliEmbeddingModel()
-        self.store = store or QdrantStore()
+        self.store = store or QdrantStore(vector_size=self.embedding_model.dimension)
         self.reranker = reranker or Reranker()
 
     def retrieve(

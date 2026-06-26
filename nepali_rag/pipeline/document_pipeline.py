@@ -69,7 +69,7 @@ class DocumentPipeline:
         if self._vector_store is None:
             name = self.collection_name or f"doc_{uuid.uuid4().hex[:12]}"
             self.collection_name = name
-            self._vector_store = QdrantStore(collection_name=name)
+            self._vector_store = QdrantStore(vector_size=self.embedding_model.dimension, collection_name=name)
         return self._vector_store
 
     def ingest(self, file_path: str) -> dict:
@@ -94,6 +94,7 @@ class DocumentPipeline:
         chunks = chunk_pages(
             pages,
             chunk_size=self.chunk_size,
+            embedding_model_name= self.embedding_model.model_name
         )
         chunks_created = len(chunks)
 

@@ -25,10 +25,11 @@ def cmd_ingest(args):
     from nepali_rag.pipeline.document_pipeline import DocumentPipeline
 
     _status("Loading embedding model...")
-    embedding_model = NepaliEmbeddingModel()
+    embedding_model = NepaliEmbeddingModel(model_name=args.embedding)
 
     _status("Connecting to Qdrant...")
     store = QdrantStore(
+        vector_size=embedding_model.dimension,
         collection_name=args.collection,
         url=args.qdrant_url,
         api_key=args.qdrant_api_key,
@@ -79,11 +80,12 @@ def cmd_query(args):
     from nepali_rag.rag.chain import RAGChain
 
     _status("Loading models…")
-    embedding_model = NepaliEmbeddingModel()
-    reranker = Reranker()
+    embedding_model = NepaliEmbeddingModel(model_name=args.embedding)
+    reranker = Reranker(model_name=args.reranker)
 
     _status("Connecting to Qdrant...")
     store = QdrantStore(
+        vector_size=embedding_model.dimension,
         collection_name=args.collection,
         url=args.qdrant_url,
         api_key=args.qdrant_api_key,
@@ -172,6 +174,7 @@ def main():
     p_ingest.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
     p_ingest.add_argument("-c", "--collection", default="nepali_docs", help="target Qdrant collection name (default: nepali_docs)")
     p_ingest.add_argument("--chunk-size", type=int, default=256, help="token chunk size (default: 256)")
+    p_ingest.add_argument("--embedding", default="intfloat/multilingual-e5-large", help="embedding model name (default: intfloat/multilingual-e5-large)")
     p_ingest.set_defaults(func=cmd_ingest)
 
     # query 
@@ -190,6 +193,8 @@ def main():
     p_query.add_argument("--history", default=None, help="conversation history as a JSON file path or inline JSON string")
     p_query.add_argument("--test", action="store_true", help="test mode (no LLM, returns raw prompt)")
     p_query.add_argument("--disable-tools", action="store_false", dest="tools", default=True, help="disable tool-calling mode")
+    p_query.add_argument("--embedding", default="intfloat/multilingual-e5-large", help="embedding model name (default: intfloat/multilingual-e5-large)")
+    p_query.add_argument("--reranker", default="BAAI/bge-reranker-v2-m3", help="reranker model name (default: BAAI/bge-reranker-v2-m3)")
     p_query.set_defaults(func=cmd_query)
 
     # serve 

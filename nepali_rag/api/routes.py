@@ -294,7 +294,9 @@ async def query_documents(request: Request, body: QueryRequest):
         history = _load_conversation(conversation_id)
 
     try:
-        store = QdrantStore(collection_name=collection)
+        store = QdrantStore(
+            vector_size=request.app.state.embedding_model.dimension,
+            collection_name=collection)
         retriever = Retriever(
             embedding_model=request.app.state.embedding_model,
             store=store,

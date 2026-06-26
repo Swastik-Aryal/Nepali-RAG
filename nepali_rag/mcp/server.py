@@ -101,6 +101,7 @@ def _get_qdrant_client(
 
 def _create_qdrant_store(
     collection_name: str,
+    vector_size: int,
     qdrant_path: str | None = None,
     qdrant_url: str | None = None,
     qdrant_api_key: str | None = None,
@@ -116,6 +117,7 @@ def _create_qdrant_store(
 
     client = _get_qdrant_client(qdrant_path, qdrant_url, qdrant_api_key)
     return QdrantStore(
+        vector_size=vector_size,
         collection_name=collection_name,
         client=client,
     )
@@ -194,8 +196,8 @@ async def ingest_document(
     try:
         if collection_name is None:
             collection_name = _generate_collection_name()
-        store = _create_qdrant_store(collection_name, qdrant_path, qdrant_url, qdrant_api_key)
         embedding_model = _get_embedding_model()
+        store = _create_qdrant_store(collection_name, embedding_model.dimension, qdrant_path, qdrant_url, qdrant_api_key)
         results = await asyncio.to_thread(
             _do_ingest, store, embedding_model, file_paths, chunk_size
         )
@@ -252,8 +254,8 @@ async def retrieve(
             (default: 5).
     """
     try:
-        store = _create_qdrant_store(collection_name, qdrant_path, qdrant_url, qdrant_api_key)
         embedding_model = _get_embedding_model()
+        store = _create_qdrant_store(collection_name, embedding_model.dimension, qdrant_path, qdrant_url, qdrant_api_key)
         reranker = _get_reranker()
         results = await asyncio.to_thread(
             _do_retrieve, store, embedding_model, reranker, query, top_k_retrieval, top_k_rerank
