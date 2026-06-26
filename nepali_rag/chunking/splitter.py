@@ -28,8 +28,6 @@ from nepali_rag.config.settings import settings
 import logging
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # for the token length error during checking phase
 
-_tokenizer = AutoTokenizer.from_pretrained(settings.embedding_model)
-
 SENTENCE_DELIMITERS = re.compile(r"([।॥!?])")
 PARAGRAPH_SPLIT = re.compile(r"\n[ \t]*\n")
 
@@ -42,9 +40,9 @@ def _ends_with_delimiter(text: str) -> bool:
     return bool(SENTENCE_DELIMITERS.match(text[-1]))
 
 
-def _count_tokens(text: str) -> int:
+def _count_tokens(text: str, tokenizer) -> int:
     """Return the number of tokens in *text* using the embedding model's tokenizer."""
-    return len(_tokenizer.encode(text, add_special_tokens=False, truncation=False))
+    return len(tokenizer.encode(text, add_special_tokens=False, truncation=False))
 
 
 def _split_sentences(text: str) -> list[str]:
@@ -65,24 +63,24 @@ def _split_sentences(text: str) -> list[str]:
     return sentences
 
 
-def _force_split_tokens(text: str, max_tokens: int) -> list[str]:
+def _force_split_tokens(text: str, max_tokens: int, tokenizer) -> list[str]:
     """Force-split a single oversized sentence at the token boundary (last resort).
 
     Returns a list of pieces where each fits within *max_tokens*. This is only
     used when a single sentence exceeds the chunk size and cannot be split any
     other way.
     """
-    token_ids = _tokenizer.encode(text, add_special_tokens=False)
+    token_ids = tokenizer.encode(text, add_special_tokens=False)
     pieces = []
     for start in range(0, len(token_ids), max_tokens):
         chunk_ids = token_ids[start : start + max_tokens]
-        piece = _tokenizer.decode(chunk_ids, skip_special_tokens=True).strip()
+        piece = tokenizer.decode(chunk_ids, skip_special_tokens=True).strip()
         if piece:
             pieces.append(piece)
     return pieces or [text.strip()]
 
 
-def _split_sentence_half(text: str, budget_tokens: int) -> str:
+def _split_sentence_half(text: str, budget_tokens: int, tokenizer) -> str:
     """Return the leading portion of *text* that fits within *budget_tokens*.
 
     Used only for the rare mid-sentence split, where a partial copy of a large
@@ -91,8 +89,8 @@ def _split_sentence_half(text: str, budget_tokens: int) -> str:
     """
     if budget_tokens <= 0:
         return ""
-    token_ids = _tokenizer.encode(text, add_special_tokens=False)
-    prefix = _tokenizer.decode(token_ids[:budget_tokens], skip_special_tokens=True).strip()
+    token_ids = tokenizer.encode(text, add_special_tokens=False)
+    prefix = tokenizer.decode(token_ids[:budget_tokens], skip_special_tokens=True).strip()
     return prefix
 
 
@@ -122,12 +120,12 @@ def _chunk_text(chunk: _Chunk) -> str:
     return " ".join(s.text for s in chunk.sents).strip()
 
 
-def _chunk_tokens(chunk: _Chunk) -> int:
+def _chunk_tokens(chunk: _Chunk, tokenizer) -> int:
     """Token count of a chunk's rendered text."""
-    return _count_tokens(_chunk_text(chunk))
+    return _count_tokens(_chunk_text(chunk), tokenizer)
 
 
-def _structural_blocks(text: str, chunk_size: int) -> list[str]:
+def _structural_blocks(text: str, chunk_size: int, tokenizer) -> list[str]:
     """Recursively split *text* on paragraph then line boundaries.
 
     Paragraphs that already fit within *chunk_size* are kept whole; oversized
@@ -140,7 +138,7 @@ def _structural_blocks(text: str, chunk_size: int) -> list[str]:
         paragraph = paragraph.strip()
         if not paragraph:
             continue
-        if _count_tokens(paragraph) <= chunk_size:
+        if _count_tokens(paragraph, tokenizer) <= chunk_size:
             blocks.append(paragraph)
         else:
             for line in paragraph.split("\n"):
@@ -150,7 +148,7 @@ def _structural_blocks(text: str, chunk_size: int) -> list[str]:
     return blocks
 
 
-def _initial_chunks(pages, chunk_size: int) -> list[_Chunk]:
+def _initial_chunks(pages, chunk_size: int, tokenizer) -> list[_Chunk]:
     """Build seed chunks from the structural split, one per paragraph/line block.
 
     Sentence fragments at the end of one structural block are joined with the
@@ -168,7 +166,7 @@ def _initial_chunks(pages, chunk_size: int) -> list[_Chunk]:
         text = page.text
         if not text or not text.strip():
             continue
-        for block in _structural_blocks(text, chunk_size):
+        for block in _structural_blocks(text, chunk_size, tokenizer):
             sents = _split_sentences(block)
             if not sents:
                 continue
@@ -203,7 +201,7 @@ def _initial_chunks(pages, chunk_size: int) -> list[_Chunk]:
     return chunks
 
 
-def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int) -> list[_Chunk]:
+def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int, tokenizer) -> list[_Chunk]:
     """Apply the two balancing rules front-to-back until both hold everywhere.
 
     Rule 1 (too big): push trailing whole sentences into the next chunk until
@@ -218,7 +216,7 @@ def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int) -> l
     i = 0
     while i < len(chunks):
         cur = chunks[i]
-        cur_tokens = _chunk_tokens(cur)
+        cur_tokens = _chunk_tokens(cur, tokenizer)
 
         # Rule 1: chunk exceeds the size limit
         if cur_tokens > chunk_size:
@@ -230,10 +228,10 @@ def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int) -> l
                     chunks.append(_Chunk([]))
                 nxt = chunks[i + 1]
 
-                while _chunk_tokens(cur) > chunk_size and len(cur.sents) > 1:
+                while _chunk_tokens(cur, tokenizer) > chunk_size and len(cur.sents) > 1:
                     nxt.sents.insert(0, cur.sents.pop())
 
-                cur_tokens = _chunk_tokens(cur)
+                cur_tokens = _chunk_tokens(cur, tokenizer)
 
                 # After pushing, current chunk may be too small.
                 if cur_tokens < min_tokens and nxt.sents:
@@ -242,7 +240,7 @@ def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int) -> l
                     # chunk's leading sentence. The full sentence stays in
                     # the next chunk (→ overlap).
                     budget = chunk_size - cur_tokens
-                    prefix = _split_sentence_half(nxt.sents[0].text, budget)
+                    prefix = _split_sentence_half(nxt.sents[0].text, budget, tokenizer)
                     if prefix:
                         cur.sents.append(
                             _Sent(prefix, nxt.sents[0].page, nxt.sents[0].source)
@@ -256,13 +254,13 @@ def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int) -> l
 
             # 1b. Single sentence that overflows.
             lead = cur.sents[0]
-            lead_tokens = _count_tokens(lead.text)
+            lead_tokens = _count_tokens(lead.text, tokenizer)
 
             if lead_tokens <= chunk_size * 2:
                 # Sentence is at most 2× chunk_size: split it in half.
                 # Keep first half here, put the FULL sentence as overlap in
                 # the next chunk so context is preserved.
-                prefix = _split_sentence_half(lead.text, chunk_size)
+                prefix = _split_sentence_half(lead.text, chunk_size, tokenizer)
                 if prefix:
                     cur.sents = [_Sent(prefix, lead.page, lead.source)]
 
@@ -278,7 +276,7 @@ def _balance_chunks(chunks: list[_Chunk], chunk_size: int, min_tokens: int) -> l
 
             # Truly massive single sentence (> 2× chunk_size): hard split on
             # token boundaries. Each piece becomes its own chunk.
-            pieces = _force_split_tokens(lead.text, chunk_size)
+            pieces = _force_split_tokens(lead.text, chunk_size, tokenizer)
             cur.sents = [_Sent(pieces[0], lead.page, lead.source)]
             insert_at = i + 1
             for piece in pieces[1:]:
@@ -315,7 +313,8 @@ def _page_number(chunk: _Chunk):
 
 def chunk_pages(
     pages,
-    chunk_size: int = None
+    chunk_size: int = None,
+    embedding_model_name: str = None,
 ) -> list[dict]:
     """Split preprocessed pages into token-limited chunks.
 
@@ -332,6 +331,8 @@ def chunk_pages(
     Args:
         pages: List of PageResult objects (from ingestion).
         chunk_size: Max tokens per chunk. Defaults to ``settings.chunk_size`` (256).
+        embedding_model_name: HuggingFace model name whose tokenizer is used for
+            token counting. Defaults to ``settings.embedding_model``.
 
     Returns:
         List of chunk dicts, each with ``'text'`` (str) and ``'metadata'`` (dict)
@@ -341,17 +342,21 @@ def chunk_pages(
     """
     if chunk_size is None:
         chunk_size = settings.chunk_size
+    if embedding_model_name is None:
+        embedding_model_name = settings.embedding_model
 
-    if chunk_size > _tokenizer.model_max_length:
+    tokenizer = AutoTokenizer.from_pretrained(embedding_model_name)
+
+    if chunk_size > tokenizer.model_max_length:
         raise ValueError(
             f"chunk_size ({chunk_size}) exceeds the embedding model's max input length "
-            f"({_tokenizer.model_max_length}). Reduce chunk_size in your environment variables or pass a smaller value."
+            f"({tokenizer.model_max_length}). Reduce chunk_size in your environment variables or pass a smaller value."
         )
 
     min_tokens = chunk_size // 2
 
-    chunks = _initial_chunks(pages, chunk_size)
-    chunks = _balance_chunks(chunks, chunk_size, min_tokens)
+    chunks = _initial_chunks(pages, chunk_size, tokenizer)
+    chunks = _balance_chunks(chunks, chunk_size, min_tokens, tokenizer)
 
     all_chunks = []
     chunk_index = 0
@@ -365,7 +370,7 @@ def chunk_pages(
                 "source": chunk.sents[0].source,
                 "page_number": _page_number(chunk),
                 "chunk_index": chunk_index,
-                "token_count": _count_tokens(text),
+                "token_count": _count_tokens(text, tokenizer),
                 "has_overlap": chunk.has_overlap,
             },
         })
