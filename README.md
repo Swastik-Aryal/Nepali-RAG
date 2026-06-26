@@ -6,13 +6,14 @@
 
 - **Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
 - **11+ document formats**: PDF (OCR), DOCX, PPTX, XLSX, CSV, TXT, Markdown, HTML, EPUB, RTF, ODT, all handled automatically.
-- **Hybrid retrieval + reranking**: Dense + sparse vectors fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. Research-backed [embedding](#v-embeddings-nepali_ragembeddings) and [reranker](#vii-retrieval-nepali_ragretrieval) model choices.
-- **LLM tool-calling mode**: the model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
+- **Hybrid retrieval + reranking**: Dense + sparse vectors fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. 
+- **Embedding + Reranking Models**: Support for 11 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#vii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
+- **LLM tool-calling mode**: The model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
 - **Any LLM providers, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
 - **Three ways to use it**: Python library, CLI, or FastAPI server with full REST API.
-- **MCP server**: expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code etc. Essentially, any agent that support MCP).
-- **Conversation history support**: multi-turn context for follow-up questions across all interfaces.
-- **Batch ingestion**: feed entire document collections into a single Qdrant collection in one call.
+- **MCP server**: Expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code etc. Essentially, any agent that support MCP).
+- **Conversation history support**: Multi-turn context for follow-up questions across all interfaces.
+- **Batch ingestion**: Feed entire document collections into a single Qdrant collection in one call.
 - **Fully configurable**: chunk size, retrieval depth, reranking count, dense/sparse weights, temperature, model, provider, essentially everything is tunable via `.env`, code, or CLI flags.
 
 ## Contents
@@ -28,8 +29,10 @@
 7. [CLI Reference](#7-cli-reference)
 8. [Supported Document Formats](#8-supported-document-formats)
 9. [LLM Providers](#9-llm-providers)
-10. [Project Structure](#10-project-structure)
-11. [Component Details](#11-component-details)
+10. [Embedding Models](#10-embedding-models)
+11. [Rerankers](#11-rerankers)
+12. [Project Structure](#12-project-structure)
+13. [Component Details](#13-component-details)
     - [i. Architecture](#i-architecture)
     - [ii. Document Ingestion](#ii-document-ingestion-nepali_ragingestion)
     - [iii. Text Preprocessing](#iii-text-preprocessing-nepali_ragpreprocessing)
@@ -42,8 +45,8 @@
     - [x. LLM Integration](#x-llm-integration-nepali_ragllm)
     - [xi. Document Pipeline](#xi-document-pipeline-nepali_ragpipeline)
     - [xii. RAG Configuration](#xii-rag-configuration-nepali_ragconfig)
-12. [References](#12-references)
-13. [License](#13-license)
+14. [References](#14-references)
+15. [License](#15-license)
 
 ## 1. Prerequisites
 
@@ -120,8 +123,9 @@ print(result)
 ```python
 from nepali_rag import DocumentPipeline, NepaliEmbeddingModel, QdrantStore
 
-embedding_model = NepaliEmbeddingModel()
-store = QdrantStore(  
+embedding_model = NepaliEmbeddingModel(model_name = "intfloat/multilingual-e5-large-instruct")
+store = QdrantStore(
+    vector_size=embedding_model.dimension,  
     collection_name="my_collection",
     url="https://your-cluster.cloud.qdrant.io",
     api_key="your-qdrant-api-key",
@@ -155,6 +159,7 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
   --qdrant-url https://your-cluster.cloud.qdrant.io \
   --qdrant-api-key your-qdrant-api-key \
   -c my_collection \
+  --embedding intfloat/multilingual-e5-large \
   --chunk-size 256 \
   -v
 ```
@@ -166,10 +171,11 @@ nepali-rag ingest doc1.pdf doc2.pdf notes.docx \
 **Python (less control, requires `.env` file):**
 
 ```python
-from nepali_rag import Retriever, QdrantStore, RAGChain, get_llm
+from nepali_rag import Retriever, NepaliEmbeddingModel, QdrantStore, RAGChain, get_llm
 
-store = QdrantStore(collection_name="my_collection") # Name of collection where chunks are stored (Defaults to .env/settings.py value)
-retriever = Retriever(store=store)
+embedding_model = NepaliEmbeddingModel()
+store = QdrantStore(vector_size=embedding_model.dimension, collection_name="my_collection") # Name of collection where chunks are stored (Defaults to .env/settings.py value)
+retriever = Retriever(embedding_model=embedding_model,store=store)
 llm = get_llm()
 chain = RAGChain(retriever=retriever, llm=llm)
 
@@ -185,14 +191,15 @@ from nepali_rag import (
     NepaliEmbeddingModel, RAGChain, get_llm,
 )
 
+embedding_model = NepaliEmbeddingModel(model_name = "intfloat/multilingual-e5-large-instruct")
+reranker = Reranker(model_name = "BAAI/bge-reranker-v2-m3")
+
 store = QdrantStore(
+  vector_size=embedding_model.dimension, # Dimensionality of the dense embedding vectors
   collection_name="my_collection", # Name of collection where chunks are stored (Defaults to .env/settings.py value)
   url="https://your-cluster.cloud.qdrant.io",
   api_key="your-qdrant-api-key"
 )
-
-embedding_model = NepaliEmbeddingModel()
-reranker = Reranker()
 
 retriever = Retriever(embedding_model=embedding_model, reranker=reranker, store=store)
 llm = get_llm(provider="gemini", model="gemini-2.5-flash", api_key="your-google-api-key") # api_key not used if provider = "ollama" OR "vllm", set base_url in that case 
@@ -240,6 +247,8 @@ nepali-rag query "नेपालको संविधानमा के ल�
   --top-k 20 \
   --top-r 5 \
   --temperature 0.3 \
+  --embedding intfloat/multilingual-e5-large \
+  --reranker BAAI/bge-reranker-v2-m3 \
   -v
 ```
 
@@ -309,7 +318,6 @@ The server uses **Streamable HTTP transport** and listens at `http://localhost:8
 ```bash
 # Eager mode (default) -- embedding model and reranker loaded at startup
 nepali-rag mcp
-
 ```
 
 ### Tools
@@ -362,6 +370,7 @@ nepali-rag ingest <file> [<file> ...]
     --qdrant-api-key KEY      (required) Qdrant API key
     -c, --collection NAME     collection name (default: nepali_docs)
     --chunk-size N            token chunk size (default: 256)
+    --embedding <name>        embedding model (default: intfloat/multilingual-e5-large)
     -v                        enable debug logging
 
 nepali-rag query "<question>"
@@ -378,6 +387,8 @@ nepali-rag query "<question>"
     --history FILE_OR_JSON    conversation history (JSON file path or inline JSON string)
     --test                    test mode (no LLM, returns raw prompt)
     --disable-tools           disable tool-calling mode (forces retrieval on every query)
+    --embedding <name>        embedding model (default: intfloat/multilingual-e5-large)
+    --reranker <name>         reranker model (default: BAAI/bge-reranker-v2-m3)
     -v                        enable debug logging
 
 nepali-rag serve
@@ -474,7 +485,50 @@ nepali-rag query "नेपालको संविधानमा के ल�
 
 > **Note:** The base URL should point to the `/v1` endpoint (not `/v1/chat/completions`). The client appends `/chat/completions` automatically.
 
-## 10. Project Structure
+## 10. Embedding Models
+
+The system supports multiple embedding model families through the `NepaliEmbeddingModel` wrapper. 
+
+Switch models by setting the `EMBEDDING_MODEL` environment variable in your `.env` file or by passing `--embedding <model_name>` in the CLI.
+
+The wrapper automatically handles prefix/prompt strategies per model family.
+
+
+| Model | Parameters | Max Tokens | Embedding Dimensions |
+| --- | --- | --- | --- |
+| `BAAI/bge-m3` | 568M | 8192 | 1024 |
+| `intfloat/multilingual-e5-small` | 118M | 512 | 384 |
+| `intfloat/multilingual-e5-base` | 278M | 512 | 768 |
+| `intfloat/multilingual-e5-large` | 560M | 512 | 1024 |
+| `intfloat/multilingual-e5-large-instruct` | 560M | 512 | 1024 |
+| `Qwen/Qwen3-Embedding-0.6B` | 0.6B | 32768 | 1024 |
+| `Qwen/Qwen3-Embedding-4B` | 4B | 32768 | 2560 |
+| `Qwen/Qwen3-Embedding-8B` | 8B | 32768 | 4096 |
+| `jinaai/jina-embeddings-v3` | 572M | 8192 | 1024 |
+| `jinaai/jina-embeddings-v5-text-nano-retrieval` | 239M | 8192 | 768 |
+| `jinaai/jina-embeddings-v5-text-small-retrieval` | 677M | 8192 | 1024 |
+| `Alibaba-NLP/gte-multilingual-base` | 305M | 8192 | 768 |
+
+> **Default:** `intfloat/multilingual-e5-large` (1024-dim) (see [Component Details - Embeddings](#vi-component-details-embeddings) for rationale)
+
+## 11. Rerankers
+
+The retrieval pipeline uses a ***cross-encoder*** reranker to re-score candidates after hybrid search. 
+
+Switch models by setting the `RERANKER_MODEL` environment variable in your `.env` file or by passing `--reranker <model_name>` in the CLI.
+
+
+### Recommended Rerankers
+
+| Model | Parameters | Max Tokens |
+| --- | --- | --- |
+| `BAAI/bge-reranker-v2-m3` | 568M | 8192 |
+| `Qwen/Qwen3-Embedding-0.6B` | 0.6B | 32768 |
+| `BAAI/bge-reranker-v2-gemma` | 2.6B | 8192 |
+
+> **Default:** `BAAI/bge-reranker-v2-m3` - lightweight, fast, and strong multilingual relevance scoring (see [Component Details - Retrieval](#vii-retrieval-nepali_ragretrieval) for rationale).
+
+## 12. Project Structure
 
 ```
 nepali-rag/
@@ -484,7 +538,7 @@ nepali-rag/
 │   ├── ingestion/               # Document parsers (OCR, docx, pptx, etc.)
 │   ├── preprocessing/           # Unicode NFC normalization, Nepali detection
 │   ├── chunking/                # Two-level sentence-aware chunker
-│   ├── embeddings/              # multilingual-e5-large with prefix handling
+│   ├── embeddings/              # Embedding model wrappers
 │   ├── vectorstore/             # Qdrant dense + sparse hybrid store
 │   ├── retrieval/               # Hybrid retrieval + cross-encoder reranking
 │   ├── rag/                     # RAG chain (always-retrieve + tool-calling)
@@ -504,7 +558,7 @@ nepali-rag/
 └── README.md
 ```
 
-## 11. Component Details
+## 13. Component Details
 
 ### i. Architecture
 
@@ -551,7 +605,7 @@ A custom sentence-aware balancing pipeline (no LangChain dependency) that respec
    - **Too big** (`> chunk_size`): trailing whole sentences are pushed into the next chunk. If a single sentence still overflows, it is split in half, the first half stays, and the **full sentence is repeated** at the start of the next chunk (overlap, tracked via `has_overlap`). For massive sentences (> chunk_size), a hard token-boundary split is used as last resort.
    - **Too small** (`< chunk_size / 2`): the next chunk is merged into the current one, bridging page boundaries when needed. If merging would leave the current chunk still undersized, a partial (token-prefix) copy of the next chunk's first sentence is appended (creating another overlap region).
 
-- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model (`intfloat/multilingual-e5-large`) to count tokens accurately. Default chunk size is **256 tokens** (half the model's 512-token context limit).
+- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model to count tokens accurately. Default maximum chunk size is **256 tokens**.
 - **Overlap handling**: Mid-sentence splits repeat the full sentence at the start of the following chunk, preserving context continuity across chunk boundaries.
 - **Multi-page chunks**: `page_number` metadata joins pages with `&` (e.g., `"3&4"`) when a chunk spans pages.
 
@@ -559,19 +613,77 @@ A custom sentence-aware balancing pipeline (no LangChain dependency) that respec
 
 ### v. Embeddings (`nepali_rag/embeddings/`)
 
-- **Model**: [`intfloat/multilingual-e5-large`](https://huggingface.co/intfloat/multilingual-e5-large) - a 1024-dimension multilingual embedding model with strong Nepali support.
-- **Library**: **sentence-transformers** (`SentenceTransformer`).
-- **Prefix handling**: Following the e5 specification, documents are prefixed with `"passage: "` and queries with `"query: "` before encoding.
-- **Normalization**: All embeddings are L2-normalized at encode time (`normalize_embeddings=True`).
+- **Library**: **sentence-transformers** (`SentenceTransformer`). All embeddings are L2-normalized at encode time (`normalize_embeddings=True`).
+- **Prefix/prompt handling**: The wrapper auto-applies the correct prefix strategy per model family (e.g., `"passage: "`/`"query: "` for E5, task instructions for Qwen3).
+- **Default model**: [`intfloat/multilingual-e5-large`](https://huggingface.co/intfloat/multilingual-e5-large) (1024-dim).
 
-**Why this model:** In a recent study on Nepali question-answering retrieval [[1]](#ref-1), multilingual E5 embedding variants (small, base, large) were systematically evaluated against SBERT-based Nepali models and BM25 on a domain-specific Nepali FAQ dataset. The E5 models consistently outperformed all other approaches across Recall@k, NDCG@k, and MRR@k, with `intfloat/e5-large` achieving the highest Recall@10 (0.8902) and competitive MRR scores. The study concluded that multilingual E5 embeddings are the most effective for Nepali semantic retrieval, making `intfloat/multilingual-e5-large` the optimal choice for this system.
+**Supported model families and selection rationale:**
+
+**1. BGE-M3** [[2]](#ref-2)[[3]](#ref-3)[[7]](#ref-7)
+
+- A 2026 preprint [[7]](#ref-7) evaluating seven multilingual and three monolingual models on Nepali legal document retrieval found that `BGE-M3` achieved the highest scores across all metrics and all evaluation settings: *Recall@10 = 0.9233, Precision@1 = 0.7400, and MRR@10 = 0.8300*
+- The model uses *XLM-RoBERTa* as its backbone, pretrained on CommonCrawl data covering 100+ languages including Nepali (Devanagari script), giving it a strong foundation for Nepali text understanding out of the box. 
+- In the BGE-M3 paper [[2]](#ref-2), `BGE-M3` achieved state-of-the-art results on multilingual (MIRACL) and cross-lingual (MKQA) benchmarks, outperforming prior models like `multilingual-e5-large` and `E5-mistral-7b` across 18 languages.
+
+| Model | Parameters | Max Tokens | Embedding Dimensions |
+| --- | --- | --- | --- |
+| `BAAI/bge-m3` | 568M | 8192 | 1024 |
+
+**2. Multilingual E5 Series** [[1]](#ref-1)[[7]](#ref-7)[[8]](#ref-8)
+
+- On the MMTEB Indic language subset (23 datasets), `multilingual-e5-large-instruct` ranks #1 with an average score of 70.2, including 84.9 on retrieval tasks and 67.0 on classification (2025) [[8]](#ref-8).
+- On the Nepali legal retrieval benchmark [[7]](#ref-7), `multilingual-e5-large-instruct` achieved *Recall@10 = 0.837, Precision@1 = 0.580, and MRR@10 = 0.663*, solidly in the top tier though trailing `BGE-M3` and `jina-v3`. 
+- In a separate study on Nepali FAQ retrieval [[1]](#ref-1), finetuned E5 variants (small, base, large) were evaluated against SBERT-based Nepali models and BM25; E5-large achieved the highest *Recall@10 (0.8902)* and competitive MRR scores, outperforming all other approaches.
+- The series also uses an XLM-RoBERTa backbone and remains lightweight (560M for the large variant).
+
+| Model | Parameters | Max Tokens | Embedding Dimensions |
+| --- | --- | --- | --- |
+| `intfloat/multilingual-e5-small` | 118M | 512 | 384 |
+| `intfloat/multilingual-e5-base` | 278M | 512 | 768 |
+| `intfloat/multilingual-e5-large` | 560M | 512 | 1024 |
+| `intfloat/multilingual-e5-large-instruct` | 560M | 512 | 1024 |
+
+**3. Jina Embeddings v3/v5** [[7]](#ref-7)[[9]](#ref-9)[[10]](#ref-10)
+
+- `jina-embeddings-v3` ranks as the second-best performing model for Nepali retrieval, achieving *Recall@10 = 0.923* (tied with `BGE-M3`) and *MRR@10 = 0.817* in the Nepali legal document retrieval benchmark [[7]](#ref-7). 
+- On the original MTEB benchmark, `jina-embeddings-v3` achieves *65.52* on English tasks and *64.44* on multilingual tasks, outperforming `multilingual-e5-large` across all multilingual tasks except reranking [[9]](#ref-9). 
+- For Nepali specifically, the *Task-Targeted Embedding Distillation* paper [[10]](#ref-10) reports `jina-v5-text-small` scoring *99.5* on Nepali Classification within MMTEB. `jina-embeddings-v5-text-small` (677M parameters) achieves *67.0* on MMTEB, the highest score among sub-1B models [[10]](#ref-10).
+
+| Model | Parameters | Max Tokens | Embedding Dimensions |
+| --- | --- | --- | --- |
+| `jinaai/jina-embeddings-v3` | 572M | 8192 | 1024 |
+| `jinaai/jina-embeddings-v5-text-nano-retrieval` | 239M | 8192 | 768 |
+| `jinaai/jina-embeddings-v5-text-small-retrieval` | 677M | 8192 | 1024 |
+
+> **Note:** Jina v5 bare names are automatically resolved to the `-retrieval` variant.
+
+**4. Qwen3 Embedding Series** [[6]](#ref-6)[[7]](#ref-7)[[10]](#ref-10)
+
+- The flagship `Qwen3-Embedding-8B` model achieves *70.58* on MTEB Multilingual, surpassing Google's `GeminiEmbedding` and establishing a new state-of-the-art among open-source models [[6]](#ref-6). 
+- In the *Task-Targeted Embedding Distillation* paper, `Qwen3-Embedding-4B` scores *97.3* on Nepali News Classification in MMTEB, the highest score of any model evaluated [[10]](#ref-10). 
+- In the Nepali legal document retrieval benchmark [[7]](#ref-7), `Qwen3-Embedding-0.6B` achieved only *Recall@10 = 0.757, Precision@1 = 0.340, and MRR@10 = 0.492*, significantly trailing `BGE-M3`, `jina-v3`, and `multilingual-e5-large` (the larger 4B and 8B variants were not tested in that benchmark).
+
+| Model | Parameters | Max Tokens | Embedding Dimensions |
+| --- | --- | --- | --- |
+| `Qwen/Qwen3-Embedding-0.6B` | 0.6B | 32768 | 1024 |
+| `Qwen/Qwen3-Embedding-4B` | 4B | 32768 | 2560 |
+| `Qwen/Qwen3-Embedding-8B` | 8B | 32768 | 4096 |
+
+**5. GTE-Multilingual** [[7]](#ref-7)
+
+- The model supports 8,192 tokens and achieves state-of-the-art results among encoder-only models of similar size on multilingual retrieval tasks. 
+- In the Nepali legal retrieval benchmark [[7]](#ref-7), GTE achieved *Recall@10 = 0.857, Precision@1 = 0.600, and MRR@10 = 0.694*, placing it third among multilingual models behind only `BGE-M3` and `jina-v3`.
+
+| Model | Parameters | Max Tokens | Embedding Dimensions |
+| --- | --- | --- | --- |
+| `Alibaba-NLP/gte-multilingual-base` | 305M | 8192 | 768 |
 
 ---
 
 ### vi. Vector Store (`nepali_rag/vectorstore/`)
 
 - **Database**: **Qdrant** (Qdrant Cloud).
-- **Dual vector storage**: Each chunk is stored with both a **dense vector** (1024-dim cosine, from the embedding model) and a **sparse vector** (term-frequency based, computed via MD5 hashing of whitespace-split tokens into a 2²⁰-dimensional space).
+- **Dual vector storage**: Each chunk is stored with both a **dense vector** (Cosine vector corresponding to the output dimension of the embedding model) and a **sparse vector** (term-frequency based, computed via MD5 hashing of whitespace-split tokens into a 2²⁰-dimensional space).
 - **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.9 dense, 0.1 sparse).
 - **Library**: `qdrant-client`.
 
@@ -582,7 +694,7 @@ from nepali_rag import QdrantStore
 from qdrant_client import QdrantClient
 
 local_client = QdrantClient("CONFIGURE DOCKER PORT/LOCAL TYPE HERE") # for custom local client
-qdrant_store = QdrantStore(collection_name="SOME_COLLECTION_NAME", client=local_client)
+qdrant_store = QdrantStore(vector_size=EMBEDDING_MODEL_DIMENSION,collection_name="SOME_COLLECTION_NAME", client=local_client)
 
 ```
 
@@ -595,7 +707,7 @@ Two-stage retrieval pipeline:
 1. **Stage 1 - Hybrid search**: Embeds the query, runs both dense and sparse search against Qdrant, and fuses results using **weighted Reciprocal Rank Fusion (RRF)** (default: top 20 candidates).
 2. **Stage 2 - Cross-encoder reranking**: Scores each `(query, passage)` pair with a cross-encoder and returns the top results (default: top 5).
 
-- **Reranker model**: [`BAAI/bge-reranker-v2-m3`](https://huggingface.co/BAAI/bge-reranker-v2-m3) - a multilingual cross-encoder reranker from the BGE family, providing strong relevance scoring across 100+ languages including Nepali.
+- **Default Reranker model**: [`BAAI/bge-reranker-v2-m3`](https://huggingface.co/BAAI/bge-reranker-v2-m3) - a multilingual cross-encoder reranker from the BGE family, providing strong relevance scoring across 100+ languages including Nepali.
 - **Library**: **sentence-transformers** (`CrossEncoder`).
 
 **Why this model:** The reranker is built on BGE-M3 [[2]](#ref-2)[[3]](#ref-3), which uses **XLM-RoBERTa** as its backbone, a model pretrained on CommonCrawl data covering 100+ languages including Nepali (Devanagari script). This gives it a strong foundation for Nepali text understanding out of the box. In the BGE-M3 paper [[2]](#ref-2), BGE-M3 achieved state-of-the-art results on multilingual (MIRACL) and cross-lingual (MKQA) benchmarks, outperforming prior models like mE5-large and E5-mistral-7b across 18 languages. The `bge-reranker-v2-m3` variant inherits this multilingual capability while being lightweight (0.6B params), fast to infer, and easy to deploy, the best performance-to-efficiency balance for multilingual reranking.
@@ -672,7 +784,7 @@ load_document() → normalize_text() → chunk_pages() → embed_documents() →
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 
-## 12. References
+## 14. References
 
 <a id="ref-1"></a> 1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
 
@@ -684,8 +796,16 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 
 <a id="ref-5"></a> 5. BAAI. *BAAI/bge-reranker-v2-gemma*. Hugging Face. [https://huggingface.co/BAAI/bge-reranker-v2-gemma](https://huggingface.co/BAAI/bge-reranker-v2-gemma)
 
-<a id="ref-6"></a> 6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://huggingface.co/Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
+<a id="ref-6"></a> 6. Zhang, Y., Li, M., Long, D., Zhang, X., Lin, H., Yang, B., Xie, P., Yang, A., Liu, D., Lin, J., Huang, F., & Zhou, J. (2025). *Qwen3 Embedding: Advancing Text Embedding and Reranking Through Foundation Models*. arXiv:2506.05176. [https://arxiv.org/pdf/2506.05176](https://arxiv.org/pdf/2506.05176)
 
-## 13. License
+<a id="ref-7"></a> 7. Aryal, S. (2025). *Multilingual Embedding Models for Nepali Legal Document Retrieval*. Preprints. [https://www.preprints.org/manuscript/202606.0033](https://www.preprints.org/manuscript/202606.0033)
+
+<a id="ref-8"></a> 8. Enevoldsen, K. et al. (2025). *MMTEB: Massive Multilingual Text Embedding Benchmark*. arXiv:2502.13595. [https://arxiv.org/html/2502.13595v3](https://arxiv.org/html/2502.13595v3)
+
+<a id="ref-9"></a> 9. Sturua, N. et al. (2024). *jina-embeddings-v3: Multilingual Embeddings With Task LoRA*. arXiv:2409.10173. [https://arxiv.org/abs/2409.10173](https://arxiv.org/abs/2409.10173)
+
+<a id="ref-10"></a> 10. Mohr, I. et al. (2025). *Task-Targeted Embedding Distillation for Multi-Task Retrieval*. arXiv:2602.15547. [https://arxiv.org/html/2602.15547v1](https://arxiv.org/html/2602.15547v1)
+
+## 15. License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
