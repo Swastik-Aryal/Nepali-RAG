@@ -1,29 +1,45 @@
-"""Qdrant vector store with dense + sparse hybrid search.
+"""Qdrant vector store with dense + BM25 hybrid search.
 
-Stores chunk embeddings alongside term-frequency sparse vectors for reciprocal
-rank fusion (RRF) at query time. Supports both Latin and Devanagari tokens.
+Stores chunk embeddings for dense retrieval and uses BM25s for keyword-based
+sparse retrieval at query time. Supports both Latin and Devanagari tokens.
 """
 
+import re
 import uuid
 from collections import defaultdict
-import hashlib
 
+import bm25s
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     Distance,
-    NamedSparseVector,
-    NamedVector,
     PointStruct,
-    SparseVector,
-    SparseVectorParams,
     VectorParams,
 )
 
 from nepali_rag.config.settings import settings
 
+_NEPALI_SYMBOLS_RE = re.compile(
+    r"[\u0964\u0965\u0970"
+    r"\u2010-\u2015\u2018\u2019\u201C\u201D\u2022\u2026\u2013\u2014"
+    r"!\"#\$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]"
+)
+_MULTI_SPACE_RE = re.compile(r" {2,}")
+
+
+def _clean_for_bm25(text: str) -> str:
+    """Strip Nepali/Unicode symbols, newlines, and collapse whitespace."""
+    text = text.replace("\n", " ").replace("\r", " ").replace("\t", " ").replace("\u00A0", " ")
+    text = _NEPALI_SYMBOLS_RE.sub(" ", text)
+    text = _MULTI_SPACE_RE.sub(" ", text)
+    return text.strip()
+
 
 class QdrantStore:
     """Qdrant client wrapper for chunk upsert and hybrid retrieval.
+
+    Dense vectors are stored in Qdrant for cosine similarity search.
+    Sparse (keyword) retrieval uses BM25s over all stored chunk texts,
+    fetched on-demand via scrolling.
 
     Args:
         - vector_size (int): Dimensionality of the dense embedding vectors.
@@ -70,7 +86,7 @@ class QdrantStore:
         self._ensure_collection()
 
     def _ensure_collection(self):
-        """Create the dense + sparse collection if missing."""
+        """Create the dense-only collection if missing."""
         collections = [c.name for c in self.client.get_collections().collections]
         if self.collection_name in collections:
             return
@@ -80,27 +96,25 @@ class QdrantStore:
             vectors_config={
                 "dense": VectorParams(size=self.vector_size, distance=Distance.COSINE),
             },
-            sparse_vectors_config={
-                "sparse": SparseVectorParams(),
-            },
         )
 
-    def _token_to_index(self, token: str) -> int:
-        """Map a token to a stable sparse index via MD5 hashing."""
-        return int(hashlib.md5(token.encode("utf-8")).hexdigest(), 16) % (2**20)
-
-    def _compute_sparse_vector(self, text: str) -> SparseVector:
-        """Build a term-frequency sparse vector (whitespace tokenization, any script)."""
-        # Basic whitespace split — works for both scripts
-        tokens = text.split()
-        term_freq: dict[int, float] = defaultdict(float)
-        for token in tokens:
-            index = self._token_to_index(token)
-            term_freq[index] += 1.0
-
-        indices = sorted(term_freq.keys())
-        values = [term_freq[i] for i in indices]
-        return SparseVector(indices=indices, values=values)
+    def _scroll_all_points(self) -> list:
+        """Scroll through all points in the collection, returning payloads and IDs."""
+        all_points = []
+        offset = None
+        while True:
+            results, next_offset = self.client.scroll(
+                collection_name=self.collection_name,
+                limit=256,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            all_points.extend(results)
+            if next_offset is None:
+                break
+            offset = next_offset
+        return all_points
 
     def insert_chunks(
         self,
@@ -108,7 +122,7 @@ class QdrantStore:
         embeddings,
         batch_size: int = 64,
     ) -> int:
-        """Upsert chunks with dense embeddings and computed sparse vectors.
+        """Upsert chunks with dense embeddings (no sparse vectors stored).
 
         Args:
             chunks: List of dicts with ``text`` and optional ``metadata``.
@@ -126,13 +140,11 @@ class QdrantStore:
             dense_list = (
                 dense_vec.tolist() if hasattr(dense_vec, "tolist") else list(dense_vec)
             )
-            sparse_vec = self._compute_sparse_vector(text)
 
             point = PointStruct(
                 id=str(uuid.uuid4()),
                 vector={
                     "dense": dense_list,
-                    "sparse": sparse_vec,
                 },
                 payload={
                     "text": text,
@@ -184,7 +196,12 @@ class QdrantStore:
         ]
 
     def search_sparse(self, query_text: str, top_k: int = None) -> list[dict]:
-        """Keyword-style search on the sparse term-frequency vector.
+        """BM25-based keyword search over all stored chunks.
+
+        Scrolls all points from Qdrant, builds a BM25s index in-memory from
+        their text payloads, and returns the top-k ranked results.
+        Corpus and query texts are cleaned (symbols, newlines, extra spaces
+        removed) before tokenization; output ``text`` contains the original.
 
         Returns:
             List of dicts with ``id``, ``score``, ``text``, and ``metadata``.
@@ -192,25 +209,50 @@ class QdrantStore:
         if top_k is None:
             top_k = settings.top_k_retrieval
 
-        sparse_vec = self._compute_sparse_vector(query_text)
+        all_points = self._scroll_all_points()
+        if not all_points:
+            return []
+        
+        print("Runinng sparse gang")
 
-        results = self.client.query_points(
-            collection_name=self.collection_name,
-            query=SparseVector(indices=sparse_vec.indices, values=sparse_vec.values),
-            using="sparse",
-            limit=top_k,
-            with_payload=True,
-        )
+        corpus_ids = []
+        corpus_texts = []
+        for pt in all_points:
+            text = pt.payload.get("text", "")
+            if text:
+                corpus_ids.append(str(pt.id))
+                corpus_texts.append(text)
 
-        return [
-            {
-                "id": str(point.id),
-                "score": point.score,
-                "text": point.payload.get("text", ""),
-                "metadata": {k: v for k, v in point.payload.items() if k != "text"},
-            }
-            for point in results.points
-        ]
+        if not corpus_texts:
+            return []
+
+        cleaned_corpus = [_clean_for_bm25(t) for t in corpus_texts]
+        corpus_tokens = bm25s.tokenize(cleaned_corpus, token_pattern=r"\S+", stemmer=None)
+        retriever = bm25s.BM25()
+        retriever.index(corpus_tokens)
+
+        cleaned_query = _clean_for_bm25(query_text)
+        query_tokens = bm25s.tokenize([cleaned_query], token_pattern=r"\S+", stemmer=None)
+        k = min(top_k, len(corpus_texts))
+        results, scores = retriever.retrieve(query_tokens, corpus=cleaned_corpus, k=k)
+
+        output = []
+        for idx in range(results.shape[1]):
+            matched_text = results[0, idx]
+            score = float(scores[0, idx])
+            pos = cleaned_corpus.index(matched_text) if matched_text in cleaned_corpus else -1
+            if pos == -1:
+                continue
+            pt = all_points[pos]
+            output.append({
+                "id": corpus_ids[pos],
+                "score": score,
+                "text": corpus_texts[pos],
+                "metadata": {k: v for k, v in pt.payload.items() if k != "text"},
+            })
+
+        print("sparse also working", output[:2])
+        return output
 
     def search_hybrid(
         self,
@@ -220,18 +262,22 @@ class QdrantStore:
         dense_weight: float = None,
         sparse_weight: float = None,
     ) -> list[dict]:
-        """Fuse dense and sparse rankings with weighted reciprocal rank fusion (RRF).
+        """Fuse dense and BM25 sparse rankings with weighted reciprocal rank fusion (RRF).
 
         Args:
             query_embedding: Dense query vector from the embedding model.
-            query_text: Raw query string for sparse search.
+            query_text: Raw query string for BM25 sparse search.
             top_k: Number of fused results (default ``settings.top_k_retrieval``, 20).
-            dense_weight: RRF weight for dense results (default ``settings.dense_weight``, 0.9).
-            sparse_weight: RRF weight for sparse results (default ``settings.sparse_weight``, 0.1).
+            dense_weight: RRF weight for dense results (default ``settings.dense_weight``, 0.7).
+            sparse_weight: RRF weight for sparse results (default ``settings.sparse_weight``, 0.3).
 
         Returns:
             Fused list sorted by combined RRF score.
+            
+        Note: If query is *NOT* a Nepali text, then sparse search is skipped, and only dense search results are returned.
         """
+        from nepali_rag.preprocessing.normalizer import is_nepali_text
+
         if top_k is None:
             top_k = settings.top_k_retrieval
         if dense_weight is None:
@@ -240,6 +286,11 @@ class QdrantStore:
             sparse_weight = settings.sparse_weight
 
         dense_results = self.search_dense(query_embedding, top_k=top_k)
+
+        if not is_nepali_text(query_text):
+            print("Nepali text huh? returning from here")
+            return dense_results
+
         sparse_results = self.search_sparse(query_text, top_k=top_k)
 
         rrf_k = 60
