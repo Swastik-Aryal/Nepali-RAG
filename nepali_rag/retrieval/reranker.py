@@ -12,6 +12,11 @@ class Reranker:
         - use_fp16 (bool, optional): If ``True`` and a CUDA GPU is available, loads the
             model in half-precision (float16) for faster inference and lower memory usage.
             Silently ignored on CPU-only machines. Defaults to ``False``.
+        
+        Recommended models:
+            - BAAI/bge-reranker-v2-m3
+            - Qwen/Qwen3-Embedding-0.6B
+            - BAAI/bge-reranker-v2-gemma
     """
 
     def __init__(self, model_name: str = None, use_fp16: bool = False):
@@ -22,6 +27,11 @@ class Reranker:
         - use_fp16 (bool, optional): If ``True`` and a CUDA GPU is available, loads the
             model in half-precision (float16) for faster inference and lower memory usage.
             Silently ignored on CPU-only machines. Defaults to ``False``.
+        
+        Recommended models:
+            - BAAI/bge-reranker-v2-m3
+            - Qwen/Qwen3-Embedding-0.6B
+            - BAAI/bge-reranker-v2-gemma
         
         """
         if model_name is None:

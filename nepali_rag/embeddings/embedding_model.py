@@ -87,6 +87,21 @@ class NepaliEmbeddingModel:
     Args:
         - model_name (str, optional): Name or path of the SentenceTransformer model to load.
             Defaults to ``settings.embedding_model`` (intfloat/multilingual-e5-large).
+        
+        Supported models:
+            - baai/bge-m3
+            - intfloat/multilingual-e5-small
+            - intfloat/multilingual-e5-base
+            - intfloat/multilingual-e5-large
+            - intfloat/multilingual-e5-large-instruct
+            - qwen/qwen3-embedding-0.6b
+            - qwen/qwen3-embedding-4b
+            - qwen/qwen3-embedding-8b
+            - jinaai/jina-embeddings-v3
+            - jinaai/jina-embeddings-v5-text-nano-retrieval
+            - jinaai/jina-embeddings-v5-text-small-retrieval
+            - alibaba-nlp/gte-multilingual-base
+            
     """
 
     def __init__(self, model_name: str = None):
@@ -95,6 +110,20 @@ class NepaliEmbeddingModel:
         - model_name (str, optional): Name or path of the SentenceTransformer model to load.
             Defaults to ``settings.embedding_model`` (``intfloat/multilingual-e5-large``).
 
+        Supported models:
+            - baai/bge-m3
+            - intfloat/multilingual-e5-small
+            - intfloat/multilingual-e5-base
+            - intfloat/multilingual-e5-large
+            - intfloat/multilingual-e5-large-instruct
+            - qwen/qwen3-embedding-0.6b
+            - qwen/qwen3-embedding-4b
+            - qwen/qwen3-embedding-8b
+            - jinaai/jina-embeddings-v3
+            - jinaai/jina-embeddings-v5-text-nano-retrieval
+            - jinaai/jina-embeddings-v5-text-small-retrieval
+            - alibaba-nlp/gte-multilingual-base
+        
         """
         if model_name is None:
             model_name = settings.embedding_model
