@@ -6,8 +6,8 @@
 
 - **Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
 - **11+ document formats**: PDF (OCR), DOCX, PPTX, XLSX, CSV, TXT, Markdown, HTML, EPUB, RTF, ODT, all handled automatically.
-- **Hybrid retrieval + reranking**: Dense + sparse vectors fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. 
-- **Embedding + Reranking Models**: Support for 11 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#vii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
+- **Hybrid retrieval + reranking**: Dense + Sparse (BM25) fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. 
+- **Embedding + Reranking Models**: Support for 11 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#viii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
 - **LLM tool-calling mode**: The model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
 - **Any LLM providers, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
 - **Three ways to use it**: Python library, CLI, or FastAPI server with full REST API.
@@ -39,12 +39,13 @@
     - [iv. Chunking](#iv-chunking-nepali_ragchunking)
     - [v. Embeddings](#v-embeddings-nepali_ragembeddings)
     - [vi. Vector Store](#vi-vector-store-nepali_ragvectorstore)
-    - [vii. Retrieval](#vii-retrieval-nepali_ragretrieval)
-    - [viii. RAG Chain](#viii-rag-chain-nepali_ragrag)
-    - [ix. Tool-Calling Mode](#ix-tool-calling-mode)
-    - [x. LLM Integration](#x-llm-integration-nepali_ragllm)
-    - [xi. Document Pipeline](#xi-document-pipeline-nepali_ragpipeline)
-    - [xii. RAG Configuration](#xii-rag-configuration-nepali_ragconfig)
+    - [vii. Sparse BM25 Search](#vii-sparse-bm25-search)
+    - [viii. Retrieval](#viii-retrieval-nepali_ragretrieval)
+    - [ix. RAG Chain](#ix-rag-chain-nepali_ragrag)
+    - [x. Tool-Calling Mode](#x-tool-calling-mode)
+    - [xi. LLM Integration](#xi-llm-integration-nepali_ragllm)
+    - [xii. Document Pipeline](#xii-document-pipeline-nepali_ragpipeline)
+    - [xiii. RAG Configuration](#xiii-rag-configuration-nepali_ragconfig)
 14. [References](#14-references)
 15. [License](#15-license)
 
@@ -357,8 +358,8 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `CHUNK_SIZE`          | `256`                              | Maximum chunk size in tokens                                                    |
 | `TOP_K_RETRIEVAL`     | `20`                               | Hybrid search candidate count                                                   |
 | `TOP_K_RERANK`        | `5`                                | Final reranked result count                                                     |
-| `DENSE_WEIGHT`        | `0.9`                              | Dense score weight in hybrid search                                             |
-| `SPARSE_WEIGHT`       | `0.1`                              | Sparse score weight in hybrid search                                            |
+| `DENSE_WEIGHT`        | `0.7`                              | Dense score weight in hybrid search                                             |
+| `SPARSE_WEIGHT`       | `0.3`                              | Sparse score weight in hybrid search                                            |
 | `LLM_TEMPERATURE`     | `0.3`                              | LLM generation temperature                                                      |
 | `USE_TOOLS`           | `true`                             | Enable tool-calling mode                                                        |
 
@@ -683,8 +684,7 @@ A custom sentence-aware balancing pipeline (no LangChain dependency) that respec
 ### vi. Vector Store (`nepali_rag/vectorstore/`)
 
 - **Database**: **Qdrant** (Qdrant Cloud).
-- **Dual vector storage**: Each chunk is stored with both a **dense vector** (Cosine vector corresponding to the output dimension of the embedding model) and a **sparse vector** (term-frequency based, computed via MD5 hashing of whitespace-split tokens into a 2²⁰-dimensional space).
-- **Hybrid search**: Retrieval combines dense and sparse results using **Reciprocal Rank Fusion** (RRF, k=60) with configurable weights (default: 0.9 dense, 0.1 sparse).
+- **Dense vector storage**: Each chunk is stored with a **dense vector** (Cosine vector corresponding to the output dimension of the embedding model).
 - **Library**: `qdrant-client`.
 
 > **P.S.** Current setup(except MCP) only supports *Qdrant Cloud*. For local/docker Qdrant setups use
@@ -700,11 +700,21 @@ qdrant_store = QdrantStore(vector_size=EMBEDDING_MODEL_DIMENSION,collection_name
 
 ---
 
-### vii. Retrieval (`nepali_rag/retrieval/`)
+### vii. Sparse BM25 Search
+
+- **Library**: [`bm25s`](https://github.com/xhluca/bm25s).
+- **Approach**: BM25 scoring is performed **client-side at query time** rather than storing pre-computed sparse vectors in Qdrant. All chunk texts are scrolled from Qdrant, cleaned (punctuation/newlines stripped, whitespace collapsed), tokenized with `token_pattern=r"\S+"` (no stemmer needed since Nepali is whitespace-delimited), and scored in-memory.
+- **Why not Qdrant-native sparse vectors?** Standard sparse encoders (e.g., SPLADE) lack Devanagari vocabulary coverage, so client-side BM25 over raw text gives accurate keyword matching without needing a language-specific sparse encoder.
+
+**English query handling:** `search_hybrid()` detects non-Nepali queries via `is_nepali_text()` (checks if >60% of characters are Devanagari). For English/non-Nepali queries, only dense (semantic) search runs, as this BM25 implementation doesnot support cross-lingual matching.
+
+---
+
+### viii. Retrieval (`nepali_rag/retrieval/`)
 
 Two-stage retrieval pipeline:
 
-1. **Stage 1 - Hybrid search**: Embeds the query, runs both dense and sparse search against Qdrant, and fuses results using **weighted Reciprocal Rank Fusion (RRF)** (default: top 20 candidates).
+1. **Stage 1 - Hybrid search**: Embeds the query, runs both dense and sparse(BM25) search against Qdrant, and fuses results using **weighted Reciprocal Rank Fusion (RRF)** (default: top 20 candidates).
 2. **Stage 2 - Cross-encoder reranking**: Scores each `(query, passage)` pair with a cross-encoder and returns the top results (default: top 5).
 
 - **Default Reranker model**: [`BAAI/bge-reranker-v2-m3`](https://huggingface.co/BAAI/bge-reranker-v2-m3) - a multilingual cross-encoder reranker from the BGE family, providing strong relevance scoring across 100+ languages including Nepali.
@@ -719,7 +729,7 @@ Two-stage retrieval pipeline:
 
 ---
 
-### viii. RAG Chain (`nepali_rag/rag/`)
+### ix. RAG Chain (`nepali_rag/rag/`)
 
 Connects retrieval to generation with three operating modes:
 
@@ -735,7 +745,7 @@ Connects retrieval to generation with three operating modes:
 
 ---
 
-### ix. Tool-Calling Mode
+### x. Tool-Calling Mode
 
 By default, the RAG chain operates in **tool-calling mode**, the LLM receives a `retrieve_documents` tool definition and autonomously decides whether retrieval is necessary for each message.
 
@@ -748,7 +758,7 @@ By default, the RAG chain operates in **tool-calling mode**, the LLM receives a 
 
 ---
 
-### x. LLM Integration (`nepali_rag/llm/`)
+### xi. LLM Integration (`nepali_rag/llm/`)
 
 A factory-based architecture (`get_llm()`) that returns a **LangChain `BaseChatModel`** for any supported provider. Provider-specific logic is isolated in individual modules:
 
@@ -766,7 +776,7 @@ All providers expose the same interface - callers use `get_llm()` and never impo
 
 ---
 
-### xi. Document Pipeline (`nepali_rag/pipeline/`)
+### xii. Document Pipeline (`nepali_rag/pipeline/`)
 
 The `DocumentPipeline` class orchestrates the full ingestion workflow in a single call:
 
@@ -780,7 +790,7 @@ load_document() → normalize_text() → chunk_pages() → embed_documents() →
 
 ---
 
-### xii. RAG Configuration (`nepali_rag/config/`)
+### xiii. RAG Configuration (`nepali_rag/config/`)
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 
