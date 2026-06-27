@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     top_k_retrieval: int = 20
     top_k_rerank: int = 5
 
-    dense_weight: float = 0.9
-    sparse_weight: float = 0.1
+    dense_weight: float = 0.7
+    sparse_weight: float = 0.3
 
     llm_temperature: float = 0.3
     use_tools: bool = True
