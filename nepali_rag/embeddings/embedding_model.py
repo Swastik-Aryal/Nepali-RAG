@@ -11,6 +11,7 @@ Supported model families:
     - jinaai/jina-embeddings-v3  (prompt_name, task ="retrieval.passage" / "retrieval.query")
     - jinaai/jina-embeddings-v5-text-nano / small  (resolves to -retrieval variant)
     - Alibaba-NLP/gte-multilingual-base  (no prefix)
+    - BAAI/bge-m3  (no prefix)
 """
 
 import numpy as np
@@ -55,6 +56,8 @@ _KNOWN_MODELS: dict[str, str] = {
     "jinaai/jina-embeddings-v5-text-small-retrieval": "jina-v5",
     # GTE
     "alibaba-nlp/gte-multilingual-base": "gte",
+    # BGE-M3
+    "baai/bge-m3": "bge",
 }
 
 
