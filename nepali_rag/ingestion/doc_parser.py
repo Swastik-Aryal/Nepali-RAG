@@ -4,7 +4,6 @@ Each loader returns ``PageResult`` objects: one page for single-unit formats,
 or one per slide/sheet/chapter for multi-unit formats.
 """
 
-import csv
 import io
 from pathlib import Path
 
@@ -51,53 +50,6 @@ def load_pptx(file_path: str) -> list[PageResult]:
         ))
 
     return results
-
-
-def load_xlsx(file_path: str) -> list[PageResult]:
-    """Extract tabular text from an Excel ``.xlsx`` file; one page per sheet."""
-    from openpyxl import load_workbook
-
-    wb = load_workbook(file_path, read_only=True, data_only=True)
-    results = []
-
-    for sheet_num, sheet_name in enumerate(wb.sheetnames, start=1):
-        ws = wb[sheet_name]
-        rows = []
-        for row in ws.iter_rows(values_only=True):
-            cells = [str(c) if c is not None else "" for c in row]
-            row_text = "\t".join(cells).strip()
-            if row_text:
-                rows.append(row_text)
-        text = f"Sheet: {sheet_name}\n" + "\n".join(rows)
-        results.append(PageResult(
-            page_number=sheet_num,
-            text=text.strip(),
-            source=str(Path(file_path).resolve()),
-            extraction_method="xlsx"
-        ))
-
-    wb.close()
-    return results
-
-
-def load_csv_file(file_path: str) -> list[PageResult]:
-    """Extract rows from a ``.csv`` file as a single page (tab-separated cells)."""
-    path = Path(file_path).resolve()
-
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
-        reader = csv.reader(f)
-        rows = []
-        for row in reader:
-            rows.append("\t".join(row))
-    text = "\n".join(rows)
-
-    return [PageResult(
-        page_number=1,
-        text=text.strip(),
-        source=str(path),
-        extraction_method="csv"
-    )]
-
 
 def load_rtf(file_path: str) -> list[PageResult]:
     """Extract plain text from an RTF file as a single page."""

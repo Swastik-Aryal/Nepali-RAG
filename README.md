@@ -5,7 +5,7 @@
 ## Features
 
 - **Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
-- **11+ document formats**: PDF (OCR), DOCX, PPTX, XLSX, CSV, TXT, Markdown, HTML, EPUB, RTF, ODT, all handled automatically.
+- **9 document formats**: PDF (OCR), DOCX, PPTX, TXT, Markdown, HTML, EPUB, RTF, ODT all handled automatically.
 - **Hybrid retrieval + reranking**: Dense + Sparse (BM25) fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. 
 - **Embedding + Reranking Models**: Support for 11 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#viii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
 - **LLM tool-calling mode**: The model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
@@ -414,8 +414,6 @@ nepali-rag mcp
 | Markdown                  | `.md`             | Direct read                |
 | Word                      | `.docx`           | python-docx                |
 | PowerPoint                | `.pptx`           | python-pptx                |
-| Excel                     | `.xlsx`           | openpyxl                   |
-| CSV                       | `.csv`            | Built-in csv               |
 | RTF                       | `.rtf`            | striprtf                   |
 | HTML                      | `.html`, `.htm` | BeautifulSoup              |
 | EPUB                      | `.epub`           | EbookLib                   |
@@ -574,12 +572,11 @@ Handles loading and text extraction from 11+ document formats. PDFs are rendered
 | **pytesseract** + **PyMuPDF** | `.pdf` (all pages via OCR) |
 | **python-docx**                     | `.docx`                    |
 | **python-pptx**                     | `.pptx`                    |
-| **openpyxl**                        | `.xlsx`                    |
 | **striprtf**                        | `.rtf`                     |
 | **BeautifulSoup**                   | `.html`, `.htm`          |
 | **EbookLib**                        | `.epub`                    |
 | **odfpy**                           | `.odt`                     |
-| Built-in                                  | `.txt`, `.md`, `.csv`  |
+| Built-in                                  | `.txt`, `.md`  |
 
 Every page is returned as a `PageResult` dataclass carrying the extracted text, source path, page number, and extraction method.
 

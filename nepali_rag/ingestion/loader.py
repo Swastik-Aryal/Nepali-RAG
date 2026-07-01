@@ -16,8 +16,6 @@ from nepali_rag.ingestion.ocr_parser import ocr_all_pages
 from nepali_rag.ingestion.doc_parser import (
     load_docx,
     load_pptx,
-    load_xlsx,
-    load_csv_file,
     load_rtf,
     load_html,
     load_epub,
@@ -30,8 +28,6 @@ SUPPORTED_FORMATS = {
     ".md": "Markdown files",
     ".docx": "Microsoft Word documents",
     ".pptx": "Microsoft PowerPoint presentations",
-    ".xlsx": "Microsoft Excel spreadsheets",
-    ".csv": "CSV files",
     ".rtf": "Rich Text Format files",
     ".html": "HTML files",
     ".htm": "HTML files",
@@ -45,8 +41,6 @@ FORMAT_HANDLERS = {
     ".md": "_load_txt",
     ".docx": load_docx,
     ".pptx": load_pptx,
-    ".xlsx": load_xlsx,
-    ".csv": load_csv_file,
     ".rtf": load_rtf,
     ".html": load_html,
     ".htm": load_html,
@@ -60,7 +54,7 @@ def load_document(file_path: str) -> list[PageResult]:
 
     Args:
         file_path (str): Path to a supported file (``.pdf``, ``.txt``, ``.md``,
-            ``.docx``, ``.pptx``, ``.xlsx``, ``.csv``, ``.rtf``, ``.html``,
+            ``.docx``, ``.pptx``, ``.rtf``, ``.html``,
             ``.htm``, ``.epub``, ``.odt``).
 
     Returns:
