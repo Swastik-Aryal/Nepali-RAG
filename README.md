@@ -536,7 +536,7 @@ nepali-rag/
 │   ├── config/settings.py       # Centralized settings (pydantic-settings)
 │   ├── ingestion/               # Document parsers (OCR, docx, pptx, etc.)
 │   ├── preprocessing/           # Unicode NFC normalization, Nepali detection
-│   ├── chunking/                # Two-level sentence-aware chunker
+│   ├── chunking/                # Nepali-aware recursive character splitter (token-sized)
 │   ├── embeddings/              # Embedding model wrappers
 │   ├── vectorstore/             # Qdrant dense + sparse hybrid store
 │   ├── retrieval/               # Hybrid retrieval + cross-encoder reranking
@@ -595,17 +595,13 @@ Normalizes raw extracted text for consistent downstream processing:
 
 ### iv. Chunking (`nepali_rag/chunking/`)
 
-A custom sentence-aware balancing pipeline (no LangChain dependency) that respects paragraph boundaries, Nepali sentence delimiters (purna viram `।`, double danda `॥`, `!`, `?` etc.), and token limits:
+Uses LangChain's **`RecursiveCharacterTextSplitter`** with a Nepali-aware separator hierarchy and token-based sizing. Pages are concatenated before splitting so chunks can flow across page boundaries.
 
-1. **Structural split :** recursively splits each page on `\n\n` then `\n` to seed initial chunks. Sentence fragments at block boundaries are carried forward and joined with the next block's first sentence, ensuring every chunk begins and ends with a complete sentence.
-2. **Balancing pass :** walks chunks front-to-back enforcing two rules until both hold:
-
-   - **Too big** (`> chunk_size`): trailing whole sentences are pushed into the next chunk. If a single sentence still overflows, it is split in half, the first half stays, and the **full sentence is repeated** at the start of the next chunk (overlap, tracked via `has_overlap`). For massive sentences (> chunk_size), a hard token-boundary split is used as last resort.
-   - **Too small** (`< chunk_size / 2`): the next chunk is merged into the current one, bridging page boundaries when needed. If merging would leave the current chunk still undersized, a partial (token-prefix) copy of the next chunk's first sentence is appended (creating another overlap region).
-
-- **Tokenizer**: Uses the **HuggingFace `AutoTokenizer`** for the configured embedding model to count tokens accurately. Default maximum chunk size is **256 tokens**.
-- **Overlap handling**: Mid-sentence splits repeat the full sentence at the start of the following chunk, preserving context continuity across chunk boundaries.
+- **Separator hierarchy**: the splitter tries, in order, paragraph breaks (`\n\n`), line breaks (`\n`), Nepali sentence delimiters (purna viram `।`, double danda `॥`), other terminators (`?`, `!`), spaces, and finally raw characters. This keeps splitting language-agnostic while still respecting Devanagari sentence boundaries. The full stop `.` is intentionally **excluded** because in Nepali it mostly appears inside numbers/abbreviations, where splitting on it fragments text badly.
+- **Token-based sizing**: chunk size and overlap are measured with the **HuggingFace `AutoTokenizer`** for the configured embedding model, so chunks never exceed the model's context window. Default maximum chunk size is **256 tokens**.
+- **Overlap**: a configurable percentage of `chunk_size` (default **15%**, via `OVERLAP_RATIO`) is repeated between consecutive chunks to preserve context across boundaries. Every chunk carrying overlap from its predecessor is flagged via `has_overlap`.
 - **Multi-page chunks**: `page_number` metadata joins pages with `&` (e.g., `"3&4"`) when a chunk spans pages.
+- **Chunk metadata**: each chunk carries `source`, `page_number`, `chunk_index`, `token_count`, and `has_overlap`.
 
 ---
 
