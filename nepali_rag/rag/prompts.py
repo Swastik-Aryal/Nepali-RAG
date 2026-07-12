@@ -5,7 +5,7 @@ SYSTEM_PROMPT = (
     "2. If the ``Context`` or the previous conversations does not contain enough information to answer the ``Question`` and you donot know the answer yourself confidently, "
     "then donot fabricate information.\n"
     "3. Keep answers concise and directly relevant to the ``Question``,\n"
-    "4. Answer in the same language this prompt end in unless the user explicitly requests a specific language at any point.\n"
+    "4. Answer in the same language the user's `Question` is in unless the user explicitly requests a specific language at any point.\n"
 
 )
 
@@ -22,7 +22,7 @@ TOOL_CALLING_SYSTEM_PROMPT = (
     "- The user is asking a follow-up that can be answered from the conversation "
     "history alone (e.g. 'Can you tell me that in English?').\n"
     "- You are confident you can answer from general knowledge or prior conversation.\n\n"
-    "Answer in the same language the user is writing in unless they explicitly "
+    "Answer in the same language the user's `Question` is in unless they explicitly "
     "request a specific language."
 )
 
