@@ -7,7 +7,7 @@
 - **Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
 - **9 document formats**: PDF (OCR), DOCX, PPTX, TXT, Markdown, HTML, EPUB, RTF, ODT all handled automatically.
 - **Hybrid retrieval + reranking**: Dense + Sparse (BM25) fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. 
-- **Embedding + Reranking Models**: Support for 11 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#viii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
+- **Embedding + Reranking Models**: Support for 12 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#viii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
 - **LLM tool-calling mode**: The model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
 - **Any LLM providers, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
 - **Three ways to use it**: Python library, CLI, or FastAPI server with full REST API.
@@ -508,7 +508,7 @@ The wrapper automatically handles prefix/prompt strategies per model family.
 | `jinaai/jina-embeddings-v5-text-small-retrieval` | 677M | 8192 | 1024 |
 | `Alibaba-NLP/gte-multilingual-base` | 305M | 8192 | 768 |
 
-> **Default:** `intfloat/multilingual-e5-large` (1024-dim) (see [Component Details - Embeddings](#vi-component-details-embeddings) for rationale)
+> **Default:** `intfloat/multilingual-e5-large` (1024-dim) (see [Component Details - Embeddings](#v-embeddings-nepali_ragembeddings) for rationale)
 
 ## 11. Rerankers
 
@@ -525,7 +525,7 @@ Switch models by setting the `RERANKER_MODEL` environment variable in your `.env
 | `Qwen/Qwen3-Embedding-0.6B` | 0.6B | 32768 |
 | `BAAI/bge-reranker-v2-gemma` | 2.6B | 8192 |
 
-> **Default:** `BAAI/bge-reranker-v2-m3` - lightweight, fast, and strong multilingual relevance scoring (see [Component Details - Retrieval](#vii-retrieval-nepali_ragretrieval) for rationale).
+> **Default:** `BAAI/bge-reranker-v2-m3` - lightweight, fast, and strong multilingual relevance scoring (see [Component Details - Retrieval](#viii-retrieval-nepali_ragretrieval) for rationale).
 
 ## 12. Project Structure
 
