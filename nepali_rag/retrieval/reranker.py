@@ -15,7 +15,7 @@ class Reranker:
         
         Recommended models:
             - BAAI/bge-reranker-v2-m3
-            - Qwen/Qwen3-Embedding-0.6B
+            - Qwen/Qwen3-Reranker-0.6B
             - BAAI/bge-reranker-v2-gemma
     """
 
@@ -30,7 +30,7 @@ class Reranker:
         
         Recommended models:
             - BAAI/bge-reranker-v2-m3
-            - Qwen/Qwen3-Embedding-0.6B
+            - Qwen/Qwen3-Reranker-0.6B
             - BAAI/bge-reranker-v2-gemma
         
         """

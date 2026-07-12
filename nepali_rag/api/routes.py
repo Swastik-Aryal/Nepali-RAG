@@ -217,7 +217,7 @@ async def query_documents(request: Request, body: QueryRequest):
         - ``OPENAI_BASE_URL`` is needed when using OpenAI-compatible providers
           that are not actually OpenAI (e.g. Groq, DeepSeek).
         - ``GOOGLE_API_KEY`` is **required** for the ``gemini`` provider.
-        - ``HF_TOKEN`` is **required** for the ``huggingface`` provider.
+        - ``HF_TOKEN`` is **required** for the ``hf_cloud`` provider.
         - ``OLLAMA_BASE_URL`` defaults to ``http://localhost:11434`` for local
           Ollama; no API key needed.
 

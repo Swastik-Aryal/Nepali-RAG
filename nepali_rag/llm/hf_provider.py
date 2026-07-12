@@ -1,29 +1,34 @@
-"""Hugging Face Inference API LLM provider."""
+"""Hugging Face local LLM provider."""
 
-from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
+
 from nepali_rag.config.settings import settings
 
 
 def get_hf_llm(**kwargs) -> BaseChatModel:
-    """Return a ``ChatOpenAI`` client for the Hugging Face router API.
+    """Return a local Hugging Face chat model via ``transformers``.
 
-    Requires ``HF_TOKEN`` in ``.env`` or ``api_key`` kwarg.
+    No API key required. The model is downloaded and run locally.
 
     Kwargs default to settings: ``model`` (``settings.hf_model_name``, ``Qwen/Qwen3.6-35B-A3B``),
-    ``base_url`` (``settings.hf_base_url``, ``https://router.huggingface.co/v1``),
     ``temperature`` (``settings.llm_temperature``, 0.3).
     """
-    api_key = kwargs.get("api_key", settings.hf_token)
-    if not api_key:
-        raise ValueError(
-            "HF_TOKEN is not set. "
-            "Set it in your .env file or pass api_key= to get_llm()."
-        )
+    try:
+        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
+    except ImportError as exc:
+        raise ImportError(
+            "langchain-huggingface is required for the local Hugging Face provider. "
+            "Install it with: pip install langchain-huggingface"
+        ) from exc
 
-    return ChatOpenAI(
-        model=kwargs.get("model", settings.hf_model_name),
-        base_url=kwargs.get("base_url", settings.hf_base_url),
-        api_key=api_key,
-        temperature=kwargs.get("temperature", settings.llm_temperature),
+    temperature = kwargs.get("temperature", settings.llm_temperature)
+    pipeline = HuggingFacePipeline.from_model_id(
+        model_id=kwargs.get("model", settings.hf_model_name),
+        task="text-generation",
+        pipeline_kwargs={
+            "max_new_tokens": 512,
+            "do_sample": temperature > 0,
+            **({"temperature": temperature} if temperature > 0 else {}),
+        },
     )
+    return ChatHuggingFace(llm=pipeline)

@@ -279,7 +279,7 @@ nepali-rag query "Can you translate that to English?" \
 
 > **Tip:** By default, tool-calling mode is enabled, the LLM decides when retrieval is needed (recommended). Use `--disable-tools` to force retrieval on every query (always-retrieve mode).
 
-For providers that need an API key (openai, gemini, hf):
+For providers that need an API key (openai, gemini, hf_cloud):
 
 ```bash
 nepali-rag query "नेपालको संविधानमा के लेखिएको छ?" \
@@ -339,7 +339,7 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `COLLECTION_NAME`     | `nepali_docs`                      | Default Qdrant collection                                                       |
 | `EMBEDDING_MODEL`     | `intfloat/multilingual-e5-large`   | Embedding model name                                                            |
 | `RERANKER_MODEL`      | `BAAI/bge-reranker-v2-m3`          | Reranker model name                                                             |
-| `LLM_PROVIDER`        | `ollama`                           | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `anthropic` |
+| `LLM_PROVIDER`        | `ollama`                           | LLM backend:`vllm`, `openai`, `gemini`, `ollama`, `hf`, `hf_cloud`, `anthropic` |
 | `VLLM_MODEL`          | `google/gemma-4-E4B-it`            | Model for vLLM provider                                                         |
 | `VLLM_BASE_URL`       | `http://localhost:8000/v1`         | vLLM server endpoint                                                            |
 | `OPENAI_API_KEY`      | *(empty)*                          | OpenAI API key (or key for any OpenAI-compatible provider)                      |
@@ -349,9 +349,9 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 | `GEMINI_MODEL`        | `gemini-2.5-flash`                 | Model for Gemini provider                                                       |
 | `OLLAMA_BASE_URL`     | `http://localhost:11434`           | Ollama server endpoint                                                          |
 | `OLLAMA_MODEL`        | `gemma4`                           | Model for Ollama provider                                                       |
-| `HF_MODEL_NAME`       | `Qwen/Qwen3.6-35B-A3B`             | Model for hugging-face-inference-api                                            |
-| `HF_BASE_URL`         | `https://router.huggingface.co/v1` | hugging-face-inference endpoint                                                 |
-| `HF_TOKEN`            | *(empty)*                          | Your hugging-face api token                                                     |
+| `HF_MODEL_NAME`       | `Qwen/Qwen3.6-35B-A3B`             | Model for local or cloud Hugging Face inference                                 |
+| `HF_BASE_URL`         | `https://router.huggingface.co/v1` | Hugging Face cloud inference endpoint                                           |
+| `HF_TOKEN`            | *(empty)*                          | Hugging Face cloud API token                                                    |
 | `ANTHROPIC_API_KEY`   | *(empty)*                          | Anthropic API key for Claude                                                    |
 | `ANTHROPIC_MODEL`     | `claude-opus-4-6`                  | Model for Anthropic provider                                                    |
 | `TESSERACT_LANGUAGES` | `nep`                              | OCR language configuration                                                      |
@@ -380,8 +380,8 @@ nepali-rag query "<question>"
     -c, --collection NAME     collection name (default: nepali_docs)
     --provider PROVIDER       LLM provider (default: ollama)
     --model MODEL             LLM model name (default: gemma4)
-    --api-key KEY             API key for LLM provider (required for openai, gemini, hf)
-    --llm-base-url URL        base URL for LLM server (for vllm, openai, ollama, hf)
+    --api-key KEY             API key for LLM provider (required for openai, gemini, hf_cloud)
+    --llm-base-url URL        base URL for LLM server (for vllm, openai, ollama, hf_cloud)
     --temperature FLOAT       LLM temperature (default: 0.3)
     --top-k N                 retrieval candidates (default: 20)
     --top-r N                 rerank candidates (default: 5)
@@ -421,7 +421,7 @@ nepali-rag mcp
 
 ## 9. LLM Providers
 
-The system supports six LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
+The system supports seven LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
 
 | Provider                | Setup                                                    | Model                                                                               |
 | ----------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -429,7 +429,8 @@ The system supports six LLM backends through a unified `get_llm()` factory. Swit
 | **`vllm`**      | Start vLLM server with `--model google/gemma-4-E4B-it` | Set `model = "google/gemma-4-E4B-it"` OR any other model but in the vllm format.  |
 | **`openai`**    | Set `OPENAI_API_KEY` or pass `--api-key`             | Set `model = "gpt-4o-mini"` OR any other model based on the OpenAI API docs.      |
 | **`gemini`**    | Set `GOOGLE_API_KEY` or pass `--api-key`             | Set `model = "gemini-2.5-flash"` OR any other model based on the Google API docs. |
-| **`hf`**        | Set `HF_TOKEN` or pass `--api-key`                   | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other model repository.               |
+| **`hf`**        | Install model dependencies; runs locally             | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any other chat model repository.          |
+| **`hf_cloud`**  | Set `HF_TOKEN` or pass `--api-key`                   | Set `model = "Qwen/Qwen3.6-35B-A3B"` OR any cloud-supported model repository.     |
 | **`anthropic`** | Set `ANTHROPIC_API_KEY` or pass `--api-key`          | Set `model = "claude-opus-4-6"` OR any Anthropic Claude model.                    |
 
 When no LLM is available, the system operates in **test mode**: the full retrieval pipeline runs but returns the formatted prompt instead of a generated answer.
@@ -522,7 +523,7 @@ Switch models by setting the `RERANKER_MODEL` environment variable in your `.env
 | Model | Parameters | Max Tokens |
 | --- | --- | --- |
 | `BAAI/bge-reranker-v2-m3` | 568M | 8192 |
-| `Qwen/Qwen3-Embedding-0.6B` | 0.6B | 32768 |
+| `Qwen/Qwen3-Reranker-0.6B` | 0.6B | 32768 |
 | `BAAI/bge-reranker-v2-gemma` | 2.6B | 8192 |
 
 > **Default:** `BAAI/bge-reranker-v2-m3` - lightweight, fast, and strong multilingual relevance scoring (see [Component Details - Retrieval](#viii-retrieval-nepali_ragretrieval) for rationale).
@@ -717,7 +718,7 @@ Two-stage retrieval pipeline:
 
 **Other strong reranker options:**
 
-- **Qwen3-Embedding-0.6B** [[6]](#ref-6) - Matches BGE-M3's parameter count (0.6B) but scores slightly lower on the MTEB multilingual reranking subtask (61.41 vs 62.79). Choose this if you are already using the Qwen3 ecosystem and prefer model-family consistency across embedding and reranking.
+- **Qwen3-Reranker-0.6B** [[6]](#ref-6) - Matches BGE-M3's parameter count (0.6B) but scores slightly lower on the MTEB multilingual reranking subtask (61.41 vs 62.79). Choose this if you are already using the Qwen3 ecosystem and prefer model-family consistency across embedding and reranking.
 - **bge-reranker-v2-gemma** [[5]](#ref-5) - A 3B LLM-based reranker built on Google's Gemma-2B. Delivers stronger ranking accuracy at the cost of higher memory and slower inference. Choose this when throughput is not the bottleneck and maximum ranking precision is the priority.
 
 ---

@@ -213,8 +213,6 @@ class QdrantStore:
         if not all_points:
             return []
         
-        print("Runinng sparse gang")
-
         corpus_ids = []
         corpus_texts = []
         for pt in all_points:
@@ -251,7 +249,6 @@ class QdrantStore:
                 "metadata": {k: v for k, v in pt.payload.items() if k != "text"},
             })
 
-        print("sparse also working", output[:2])
         return output
 
     def search_hybrid(
@@ -288,7 +285,6 @@ class QdrantStore:
         dense_results = self.search_dense(query_embedding, top_k=top_k)
 
         if not is_nepali_text(query_text):
-            print("Nepali text huh? returning from here")
             return dense_results
 
         sparse_results = self.search_sparse(query_text, top_k=top_k)

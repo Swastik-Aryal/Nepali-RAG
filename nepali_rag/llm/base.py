@@ -1,6 +1,8 @@
-from langchain_core.language_models import BaseChatModel
-from nepali_rag.config.settings import settings
+import importlib
 
+from langchain_core.language_models import BaseChatModel
+
+from nepali_rag.config.settings import settings
 
 PROVIDERS = {
     "anthropic": "nepali_rag.llm.anthropic_provider.get_anthropic_llm",
@@ -9,6 +11,7 @@ PROVIDERS = {
     "gemini": "nepali_rag.llm.gemini_provider.get_gemini_llm",
     "ollama": "nepali_rag.llm.ollama_provider.get_ollama_llm",
     "hf": "nepali_rag.llm.hf_provider.get_hf_llm",
+    "hf_cloud": "nepali_rag.llm.hf_cloud_provider.get_hf_llm",
 }
 
 
@@ -20,14 +23,16 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
     interact with the standard LangChain chat model interface.
 
     Args:
-        - provider: One of ``anthropic``, ``vllm``, ``hf``, ``openai``, ``gemini``, ``ollama``.
+        - provider: One of ``anthropic``, ``vllm``, ``hf``, ``hf_cloud``, ``openai``,
+            ``gemini``, ``ollama``.
             Defaults to ``settings.llm_provider`` (``ollama``).
         - **kwargs: Forwarded to the provider factory.
             - Common keys:
                 - ``model``: Default model to use for the LLM.
                         - default ``settings.anthropic_model`` for anthropic ("claude-opus-4-6"),
                         - default ``settings.vllm_model`` for vllm ("google/gemma-4-E4B-it"),
-                        - default ``settings.hf_model_name`` for hf ("Qwen/Qwen3.6-35B-A3B"),
+                        - default ``settings.hf_model_name`` for hf and hf_cloud
+                          ("Qwen/Qwen3.6-35B-A3B"),
                         - default ``settings.openai_model`` for openai ("gpt-4o-mini"),
                         - default ``settings.gemini_model`` for gemini ("gemini-2.5-flash"),
                         - default ``settings.ollama_model`` for ollama ("gemma4")
@@ -37,13 +42,15 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
                         - default ``settings.anthropic_api_key`` for anthropic (""),
                         - default ``settings.openai_api_key`` for openai ("")
                         - default ``settings.google_api_key`` for gemini ("")
-                        - default ``settings.hf_token`` for hf ("")
+                        - default ``settings.hf_token`` for hf_cloud ("")
                 - ``base_url``: Base URL of the LLM.
                         - default ``settings.vllm_base_url`` for vllm (``http://localhost:8000/v1``)
-                        - default ``settings.openai_base_url`` for openai (``""``, uses official API)
+                        - default ``settings.openai_base_url`` for openai
+                          (``""``, uses official API)
                         - default ``settings.ollama_base_url`` for ollama (``http://localhost:11434``)
-                        - default ``settings.hf_base_url`` for hf (``https://router.huggingface.co/v1``)
-    
+                        - default ``settings.hf_base_url`` for hf_cloud
+                          (``https://router.huggingface.co/v1``)
+
     Returns:
         A configured BaseChatModel instance.
 
@@ -59,7 +66,6 @@ def get_llm(provider: str = None, **kwargs) -> BaseChatModel:
         )
 
     module_path, func_name = PROVIDERS[provider].rsplit(".", 1)
-    import importlib
     module = importlib.import_module(module_path)
     factory = getattr(module, func_name)
 

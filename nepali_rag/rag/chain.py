@@ -173,7 +173,7 @@ class RAGChain:
         messages.append(HumanMessage(content=user_message))
 
         response = self.llm.invoke(messages)
-        answer = response.content if hasattr(response, "content") else str(response)
+        answer = response.text
 
         return {
             "answer": answer,
@@ -219,14 +219,7 @@ class RAGChain:
 
         # LLM chose NOT to call the tool 
         if not response.tool_calls:
-            answer = response.content if hasattr(response, "content") else str(response)
-            # Some providers (e.g. Gemini) return content as a list of
-            # content-part dicts when tools are bound but not called.
-            # Normalise to a plain string.
-            if isinstance(answer, list):
-                answer = " ".join(
-                    part.get("text", "") for part in answer if isinstance(part, dict)
-                ).strip() or str(answer)
+            answer = response.text
             logger.info("Tool-calling mode: LLM skipped retrieval for '%s'", question[:80])
             return {
                 "answer": answer,
@@ -266,11 +259,7 @@ class RAGChain:
         # Second LLM call: generate the answer using the retrieved context.
         # Use the base LLM (without tools bound) for the final response.
         final_response = self.llm.invoke(messages)
-        answer = (
-            final_response.content
-            if hasattr(final_response, "content")
-            else str(final_response)
-        )
+        answer = final_response.text
 
         return {
             "answer": answer,
