@@ -2,6 +2,12 @@ import torch
 from sentence_transformers import CrossEncoder
 from nepali_rag.config.settings import settings
 
+def _best_dtype() -> torch.dtype:
+    """Return fp16 on CUDA, fp32 on CPU."""
+    if torch.cuda.is_available():
+        return torch.float16
+    return torch.float32
+
 
 class Reranker:
     """Scores (query, passage) pairs with a CrossEncoder model.
@@ -19,14 +25,11 @@ class Reranker:
             - BAAI/bge-reranker-v2-gemma
     """
 
-    def __init__(self, model_name: str = None, use_fp16: bool = False):
+    def __init__(self, model_name: str = None):
         """Load reranker model.
 
         - model_name (str, optional): Name or path of the cross-encoder model to load.
             Defaults to ``settings.reranker_model`` (BAAI/bge-reranker-v2-m3).
-        - use_fp16 (bool, optional): If ``True`` and a CUDA GPU is available, loads the
-            model in half-precision (float16) for faster inference and lower memory usage.
-            Silently ignored on CPU-only machines. Defaults to ``False``.
         
         Recommended models:
             - BAAI/bge-reranker-v2-m3
@@ -36,10 +39,11 @@ class Reranker:
         """
         if model_name is None:
             model_name = settings.reranker_model
-        self.model = CrossEncoder(model_name)
-        if use_fp16 and torch.cuda.is_available():
-            self.model.model.half()
-            print("Reranker model loaded in half-precision (float16)")
+        
+        dtype = _best_dtype()
+
+        self.model = CrossEncoder(model_name, model_kwargs={"torch_dtype": dtype})
+
 
     def rerank(
         self,

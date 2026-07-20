@@ -14,6 +14,7 @@ Supported model families:
     - BAAI/bge-m3  (no prefix)
 """
 
+import torch
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from nepali_rag.config.settings import settings
@@ -34,6 +35,13 @@ def _resolve_jina_v5(model_name: str) -> str:
         if model_name == base:
             return f"{base}-retrieval"
     return model_name
+
+
+def _best_dtype() -> torch.dtype:
+    """Return fp16 on CUDA, fp32 on CPU."""
+    if torch.cuda.is_available():
+        return torch.float16
+    return torch.float32
 
 
 # Mapping from exact (lowercased) SentenceTransformer model identifiers to
@@ -135,7 +143,12 @@ class NepaliEmbeddingModel:
         except ValueError:
             raise
 
-        self.model = SentenceTransformer(model_name, trust_remote_code=True)
+        dtype = _best_dtype()
+        self.model = SentenceTransformer(
+            model_name,
+            trust_remote_code=True,
+            model_kwargs={"torch_dtype": dtype},
+        )
         self.dimension = self.model.get_embedding_dimension()
 
     def embed_documents(self, texts: list[str]) -> np.ndarray:
