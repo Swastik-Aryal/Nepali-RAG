@@ -817,7 +817,7 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 
 **Benchmark setup:**
 - **Dataset**: 8 document samples, 10 QnA pairs each (English + Nepali)
-- **RAG LLM**: `gemma3:1b` (Ollama)
+- **RAG LLM**: `gemma4:31b` (Google Gemini API)
 - **Judge LLM**: `Qwen3-235B-A22B-Instruct-2507`
 - **Skipped**: `Qwen3-Embedding-4B` and `Qwen3-Embedding-8B` (hardware limitations)
 

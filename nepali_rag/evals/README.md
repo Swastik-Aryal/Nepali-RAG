@@ -293,7 +293,7 @@ This module is meant to be edited. Some things you might want to change:
 
 | Parameter | Value |
 |---|---|
-| **RAG LLM** | `gemma3:1b` (Ollama) |
+| **RAG LLM** | `gemma4:31b` (Google Gemini API) |
 | **Judge LLM** | `Qwen3-235B-A22B-Instruct-2507` |
 | **Dataset** | 8 document samples, 10 QnA pairs each (English + Nepali) |
 | **Embedding models tested** | 10 of 12 supported |
