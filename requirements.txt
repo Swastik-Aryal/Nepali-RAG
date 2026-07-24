@@ -48,3 +48,4 @@ python-multipart>=0.0.20
 # Dev / Testing
 pytest>=8.0.0
 ruff>=0.4.0
+deepeval>=2.0.0

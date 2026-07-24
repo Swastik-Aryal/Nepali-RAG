@@ -1,27 +1,48 @@
 """RAG evaluation runner.
 
-Iterates over a structured dataset directory, and for every embedding model +
-reranker combination:
-  1. Ingests the documents into a fresh Qdrant collection.
-  2. Runs each question through the RAG chain.
-  3. Writes a results CSV with question, actual_answer, output_answer,
-     and retrieved_context (top-5 texts).
+For every embedding + reranker combination, ingests documents into a fresh
+Qdrant collection, runs each question through the RAG chain, and writes a
+results CSV.
 
-Dataset layout expected:
-  dataset/
-    datapoint_1/
-      data.csv               (columns: question, actual_answer)
-      documents/
-        doc1.pdf
-        doc2.txt
-        ...
-    datapoint_2/
-      ...
+Usage (CLI):
+    python -m nepali_rag.evals.rag_output_generator path/to/dataset
+    OR
+    python -m nepali_rag.evals.rag_output_generator path/to/dataset \
+        --embeddings BAAI/bge-m3 intfloat/multilingual-e5-small \
+        --rerankers BAAI/bge-reranker-v2-m3
+
+Usage (Python):
+    from nepali_rag.evals.rag_output_generator import run_rag
+    run_rag("path/to/dataset")
+     OR 
+    run_rag("path/to/dataset", embedding_models=["BAAI/bge-m3"])
+
+Required .env / environment variables:
+    QDRANT_URL          Qdrant server URL.
+    QDRANT_API_KEY      Qdrant API key.
+    GOOGLE_API_KEY      (or whichever LLM provider vars you use)
+
+    Other RAG settings (top_k_retrieval, top_k_rerank, dense_weight, etc.)
+    are read from settings / .env. See nepali_rag/config/settings.py.
+
+Dataset layout:
+    dataset_dir/
+        test1/
+            data.csv                 columns: question, actual_answer
+            documents/
+                doc1.pdf
+                doc2.docx
+                ...
+        test2/
+            data.csv
+            documents/
+                ...
 
 Output (created inside each datapoint folder):
-  datapoint_1/
-    rag_results/
-      <embedding_short>__<reranker_short>.csv
+    test1/
+        rag_results/
+            <embedding_slug>__<reranker_slug>.csv
+                columns: question, actual_answer, output_answer, retrieved_context
 """
 
 import os
@@ -55,7 +76,8 @@ EMBEDDING_MODELS = [
     "intfloat/multilingual-e5-large",
     "intfloat/multilingual-e5-large-instruct",
     "qwen/qwen3-embedding-0.6b",
-    "qwen/qwen3-embedding-4b",
+    "qwen/qwen3-embedding-4b", # (too large so skipped in testing phase)
+    "qwen/qwen3-embedding-8b", # (too large so skipped in testing phase)
     "jinaai/jina-embeddings-v3",
     "jinaai/jina-embeddings-v5-text-nano-retrieval",
     "jinaai/jina-embeddings-v5-text-small-retrieval",
@@ -67,7 +89,6 @@ RERANKER_MODELS = [
     "Qwen/Qwen3-Reranker-0.6B",
     "BAAI/bge-reranker-v2-gemma",
 ]
-
 
 def _slug(model_name: str) -> str:
     return model_name.replace("/", "_").replace("-", "_")
@@ -98,10 +119,6 @@ def run_rag(
     dataset_dir: str,
     embedding_models: list[str] | None = None,
     reranker_models: list[str] | None = None,
-    qdrant_url: str | None = None,
-    qdrant_api_key: str | None = None,
-    top_k_retrieval: int = 20,
-    top_k_rerank: int = 5,
 ):
     """Run the full RAG evaluation sweep.
 
@@ -109,11 +126,6 @@ def run_rag(
         dataset_dir: Root directory containing datapoint sub-folders.
         embedding_models: List of embedding model names to evaluate.
         reranker_models: List of reranker model names to evaluate.
-        qdrant_url: Qdrant server URL (falls back to settings/.env).
-        qdrant_api_key: Qdrant API key (falls back to settings/.env).
-        use_tools: Whether to enable tool-calling mode on the RAG chain.
-        top_k_retrieval: Hybrid-search candidate count.
-        top_k_rerank: Final reranked result count.
     """
     dataset_path = Path(dataset_dir)
     if not dataset_path.is_dir():
@@ -144,6 +156,11 @@ def run_rag(
         reranker = Reranker(model_name=rrk_name)
 
         for dp_dir in datapoint_dirs:
+            out_csv = dp_dir / "rag_results" / f"{combo_slug}.csv"
+            if out_csv.exists():
+                logger.info("Skipping %s for %s (already exists)", dp_dir.name, combo_slug)
+                continue
+
             csv_path = _find_csv(dp_dir)
             if csv_path is None:
                 logger.warning("No CSV found in %s, skipping", dp_dir)
@@ -168,8 +185,6 @@ def run_rag(
             store = QdrantStore(
                 vector_size=embedding_model.dimension,
                 collection_name=collection_name,
-                **({"url": qdrant_url} if qdrant_url else {}),
-                **({"api_key": qdrant_api_key} if qdrant_api_key else {}),
             )
 
             pipeline = DocumentPipeline(
@@ -195,14 +210,10 @@ def run_rag(
                 if not question:
                     continue
 
-                result = chain.run(
-                    question=question,
-                    top_k_retrieval=top_k_retrieval,
-                    top_k_rerank=top_k_rerank,
-                )
+                result = chain.run(question=question)
 
                 retrieved_texts = [
-                    s.get("text", "") for s in result.get("sources", [])[:5]
+                    s.get("text", "") for s in result.get("sources", [])
                 ]
 
                 results_out.append({
@@ -211,6 +222,9 @@ def run_rag(
                     "output_answer": result.get("answer", ""),
                     "retrieved_context": json.dumps(retrieved_texts, ensure_ascii=False),
                 })
+
+                logger.info("Sleeping for 5 seconds")
+                time.sleep(5)
 
             results_dir = dp_dir / "rag_results"
             results_dir.mkdir(exist_ok=True)
@@ -245,22 +259,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run RAG evaluation sweep")
     parser.add_argument("dataset_dir", help="Path to the dataset root directory")
-    parser.add_argument("--qdrant-url", default=None)
-    parser.add_argument("--qdrant-api-key", default=None)
-    parser.add_argument("--top-k-retrieval", type=int, default=20)
-    parser.add_argument("--top-k-rerank", type=int, default=5)
-    parser.add_argument(
-        "--embeddings",
-        nargs="+",
-        default=None,
-        help="Override embedding models to test",
-    )
-    parser.add_argument(
-        "--rerankers",
-        nargs="+",
-        default=None,
-        help="Override reranker models to test",
-    )
+    parser.add_argument("--embeddings", nargs="+", default=None, help="Override embedding models")
+    parser.add_argument("--rerankers", nargs="+", default=None, help="Override reranker models")
 
     args = parser.parse_args()
 
@@ -268,8 +268,4 @@ if __name__ == "__main__":
         dataset_dir=args.dataset_dir,
         embedding_models=args.embeddings,
         reranker_models=args.rerankers,
-        qdrant_url=args.qdrant_url,
-        qdrant_api_key=args.qdrant_api_key,
-        top_k_retrieval=args.top_k_retrieval,
-        top_k_rerank=args.top_k_rerank,
     )

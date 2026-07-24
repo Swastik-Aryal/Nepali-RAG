@@ -8,8 +8,8 @@ def _status(msg: str):
     print(f"  ⟶  {msg}", file=sys.stderr, flush=True)
 
 
-def _setup_logging(verbose: bool = False):
-    level = logging.DEBUG if verbose else logging.WARNING
+def _setup_logging(verbose: bool = False, default_level: int = logging.WARNING):
+    level = logging.DEBUG if verbose else default_level
     logging.basicConfig(
         level=level,
         format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
@@ -151,6 +151,35 @@ def cmd_mcp(args):
     run_server(no_init=args.no_init)
 
 
+def cmd_eval_generate(args):
+    """Generate RAG outputs for every embedding + reranker combo."""
+    _setup_logging(args.verbose, default_level=logging.INFO)
+    from nepali_rag.evals.rag_output_generator import run_rag
+
+    _status("Starting RAG output generation sweep...")
+    run_rag(
+        dataset_dir=args.dataset_dir,
+        embedding_models=args.embeddings,
+        reranker_models=args.rerankers,
+    )
+
+
+def cmd_eval_score(args):
+    """Score RAG outputs using DeepEval metrics."""
+    _setup_logging(args.verbose, default_level=logging.INFO)
+    from nepali_rag.evals.evaluator import run_evaluation
+
+    _status("Starting DeepEval scoring...")
+    run_evaluation(
+        dataset_dir=args.dataset_dir,
+        output_dir=args.output_dir,
+        embedding_models=args.embeddings,
+        reranker_models=args.rerankers,
+        run_async=args.run_async,
+        max_concurrent=args.max_concurrent,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="nepali-rag",
@@ -224,6 +253,29 @@ def main():
     p_mcp = subparsers.add_parser("mcp", parents=[common], help="start the MCP server (HTTP transport at http://localhost:8000)")
     p_mcp.add_argument("--no-init", action="store_true", default=False, help="skip eager model loading; load models on first tool call instead")
     p_mcp.set_defaults(func=cmd_mcp)
+
+    # eval-generate
+    p_eval_gen = subparsers.add_parser(
+        "eval-generate", parents=[common],
+        help="generate RAG outputs for each embedding + reranker combination",
+    )
+    p_eval_gen.add_argument("dataset_dir", help="path to the dataset root directory")
+    p_eval_gen.add_argument("--embeddings", nargs="+", default=None, help="override embedding models to evaluate (Default: None(all embeddings))")
+    p_eval_gen.add_argument("--rerankers", nargs="+", default=None, help="override reranker models to evaluate (Default: None(all rerankers))")
+    p_eval_gen.set_defaults(func=cmd_eval_generate)
+
+    # eval-score
+    p_eval_score = subparsers.add_parser(
+        "eval-score", parents=[common],
+        help="score RAG outputs using DeepEval metrics",
+    )
+    p_eval_score.add_argument("dataset_dir", help="path to the dataset root directory")
+    p_eval_score.add_argument("--output-dir", default=None, help="output directory (default: sibling eval_results/)")
+    p_eval_score.add_argument("--embeddings", nargs="+", default=None, help="override embedding models to evaluate (Default: None(all embeddings))")
+    p_eval_score.add_argument("--rerankers", nargs="+", default=None, help="override reranker models to evaluate (Default: None(all rerankers))")
+    p_eval_score.add_argument("--async", action="store_true", dest="run_async", default=False, help="enable async evaluation")
+    p_eval_score.add_argument("--max-concurrent", type=int, default=2, help="max concurrent async evaluations (requires --async)")
+    p_eval_score.set_defaults(func=cmd_eval_score)
 
     args = parser.parse_args()
 

@@ -4,17 +4,28 @@
 
 ## Features
 
-- **Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
-- **9 document formats**: PDF (OCR), DOCX, PPTX, TXT, Markdown, HTML, EPUB, RTF, ODT all handled automatically.
-- **Hybrid retrieval + reranking**: Dense + Sparse (BM25) fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision. 
-- **Embedding + Reranking Models**: Support for 12 [embedding](#v-embeddings-nepali_ragembeddings) and 3 [reranker](#viii-retrieval-nepali_ragretrieval) model choices. (Research/benchmark backed)
+- **✦ Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
+- **Evaluations**: All embedding + reranker combinations [evaluated](#evaluation-highlights) across 5 RAG metrics on Nepali and English QnA pairs. [Full results](#14-evaluation-results) | [Evaluation docs](./nepali_rag/evals/README.md)
+- **Hybrid retrieval + reranking**: Dense + Sparse (BM25) fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision.
 - **LLM tool-calling mode**: The model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
-- **Any LLM providers, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
-- **Three ways to use it**: Python library, CLI, or FastAPI server with full REST API.
-- **MCP server**: Expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code etc. Essentially, any agent that support MCP).
-- **Conversation history support**: Multi-turn context for follow-up questions across all interfaces.
-- **Batch ingestion**: Feed entire document collections into a single Qdrant collection in one call.
-- **Fully configurable**: chunk size, retrieval depth, reranking count, dense/sparse weights, temperature, model, provider, essentially everything is tunable via `.env`, code, or CLI flags.
+- **Any LLM provider, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
+- **9 document formats**: PDF (OCR), DOCX, PPTX, TXT, Markdown, HTML, EPUB, RTF, ODT with single and batch ingestion.
+- **MCP server**: Expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code, etc.).
+- **Python library, CLI, or FastAPI server**: Three interfaces, fully configurable via `.env`, code, or CLI flags.
+
+**[Jump to docs](#contents)** OR **[Quick start](#3-quick-start)**
+
+## Evaluation Highlights
+
+| Rank | Embedding | Reranker | Ans. Relevancy | Faithfulness | Ctx. Recall | Ctx. Precision | Ctx. Relevancy | Retrieval Avg |
+|---|---|---|---|---|---|---|---|---|
+| **1** | **`jina-embeddings-v5-text-nano-retrieval`** | **`bge-reranker-v2-m3`** | **1.000** | 0.892 | **0.988** | 0.886 | 0.393 | **0.756** |
+| 2 | `multilingual-e5-base` | `bge-reranker-v2-m3` | 0.985 | 0.908 | 0.975 | **0.929** | 0.355 | 0.753 |
+| 3 | `multilingual-e5-large-instruct` | `bge-reranker-v2-m3` | 0.959 | 0.922 | 0.975 | 0.926 | 0.350 | 0.750 |
+| 4 | `bge-m3` | `bge-reranker-v2-m3` | 0.962 | 0.942 | 0.975 | 0.928 | 0.328 | 0.744 |
+| 5 | `multilingual-e5-small` | `bge-reranker-v2-m3` | 0.969 | 0.941 | 0.975 | 0.922 | 0.330 | 0.742 |
+
+For the full combination results, see [Evaluation Results](#14-evaluation-results). For methodology and running your own evaluations, see [Evaluation Documentation](./nepali_rag/evals/README.md).
 
 ## Contents
 
@@ -46,8 +57,9 @@
     - [xi. LLM Integration](#xi-llm-integration-nepali_ragllm)
     - [xii. Document Pipeline](#xii-document-pipeline-nepali_ragpipeline)
     - [xiii. RAG Configuration](#xiii-rag-configuration-nepali_ragconfig)
-14. [References](#14-references)
-15. [License](#15-license)
+14. [Evaluation Results](#14-evaluation-results)
+15. [References](#15-references)
+16. [License](#16-license)
 
 ## 1. Prerequisites
 
@@ -76,7 +88,8 @@ pip install -e . --config-settings editable_mode=compat
 
 This installs all dependencies (document parsers, embeddings, vector store, LLM providers, API server).
 
-**GPU acceleration (recommended):** The default install pulls the CPU-only PyTorch build from PyPI. If you have an NVIDIA GPU, install the CUDA version of PyTorch **before or after** running `pip install -e .`:
+> [!TIP]
+> **GPU acceleration:** The default install pulls CPU-only PyTorch. If you have an NVIDIA GPU, install the CUDA build **before or after** `pip install -e .`:
 
 ```bash
 # Example for CUDA 12.1 (check your version with: nvidia-smi)
@@ -91,7 +104,8 @@ For the Python usage (less control snippets), the library reads settings from a 
 cp .env.example .env
 ```
 
-> **Important:** For Python scripts, the `.env` file is loaded from your **current working directory** (CWD). For the API server, you can point to any `.env` file with `nepali-rag serve --env-file /path/to/.env`.
+> [!IMPORTANT]
+> For Python scripts, the `.env` file is loaded from your **current working directory** (CWD). For the API server, you can point to any `.env` file with `nepali-rag serve --env-file /path/to/.env`.
 
 At minimum, set your Qdrant connection:
 
@@ -100,9 +114,11 @@ QDRANT_URL=https://your-cluster.cloud.qdrant.io
 QDRANT_API_KEY=your-qdrant-api-key
 ```
 
-> **Note:** If `.env` file is absent, the library will use the default values set in the [config/settings.py](./nepali_rag/config/settings.py) (can also be viewed in `env.example`) file.
+> [!NOTE]
+> If `.env` file is absent, the library will use the default values set in [config/settings.py](./nepali_rag/config/settings.py) (also viewable in `.env.example`).
 
-> **Note:** The `.env` file is **not required** for terminal (CLI) usage. All parameters are passed directly as command-line arguments.
+> [!NOTE]
+> The `.env` file is **not required** for CLI usage. All parameters are passed directly as command-line arguments.
 
 ## 3. Quick Start
 
@@ -277,7 +293,8 @@ nepali-rag query "Can you translate that to English?" \
   -v
 ```
 
-> **Tip:** By default, tool-calling mode is enabled, the LLM decides when retrieval is needed (recommended). Use `--disable-tools` to force retrieval on every query (always-retrieve mode).
+> [!TIP]
+> By default, tool-calling mode is enabled and the LLM decides when retrieval is needed (recommended). Use `--disable-tools` to force retrieval on every query (always-retrieve mode).
 
 For providers that need an API key (openai, gemini, hf_cloud):
 
@@ -304,7 +321,8 @@ nepali-rag serve --env-file /path/to/.env --port 8080 -v
 
 The API will be available at `http://localhost:8080`. Interactive docs at `http://localhost:8080/docs`.
 
-> **Note:** The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
+> [!NOTE]
+> The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
 
 Full API server documentation here: [API SERVER DOCUMENATION](./nepali_rag/api/README.md)
 
@@ -404,7 +422,7 @@ nepali-rag mcp
     -v                        enable debug logging
 
 ```
-
+For evalution guide visit [Evaluation Documentation](./nepali_rag/evals/README.md).
 ## 8. Supported Document Formats
 
 | Format                    | Extensions          | Method                     |
@@ -483,7 +501,8 @@ nepali-rag query "नेपालको संविधानमा के ल�
   --llm-base-url https://api.groq.com/openai/v1
 ```
 
-> **Note:** The base URL should point to the `/v1` endpoint (not `/v1/chat/completions`). The client appends `/chat/completions` automatically.
+> [!WARNING]
+> The base URL should point to the `/v1` endpoint (not `/v1/chat/completions`). The client appends `/chat/completions` automatically.
 
 ## 10. Embedding Models
 
@@ -509,7 +528,8 @@ The wrapper automatically handles prefix/prompt strategies per model family.
 | `jinaai/jina-embeddings-v5-text-small-retrieval` | 677M | 8192 | 1024 |
 | `Alibaba-NLP/gte-multilingual-base` | 305M | 8192 | 768 |
 
-> **Default:** `intfloat/multilingual-e5-large` (1024-dim) (see [Component Details - Embeddings](#v-embeddings-nepali_ragembeddings) for rationale)
+> [!NOTE]
+> **Default:** `intfloat/multilingual-e5-large` (1024-dim). See [Component Details - Embeddings](#v-embeddings-nepali_ragembeddings) for rationale.
 
 ## 11. Rerankers
 
@@ -526,7 +546,8 @@ Switch models by setting the `RERANKER_MODEL` environment variable in your `.env
 | `Qwen/Qwen3-Reranker-0.6B` | 0.6B | 32768 |
 | `BAAI/bge-reranker-v2-gemma` | 2.6B | 8192 |
 
-> **Default:** `BAAI/bge-reranker-v2-m3` - lightweight, fast, and strong multilingual relevance scoring (see [Component Details - Retrieval](#viii-retrieval-nepali_ragretrieval) for rationale).
+> [!NOTE]
+> **Default:** `BAAI/bge-reranker-v2-m3` - lightweight, fast, and strong multilingual relevance scoring. See [Component Details - Retrieval](#viii-retrieval-nepali_ragretrieval) for rationale.
 
 ## 12. Project Structure
 
@@ -650,7 +671,8 @@ Uses LangChain's **`RecursiveCharacterTextSplitter`** with a Nepali-aware separa
 | `jinaai/jina-embeddings-v5-text-nano-retrieval` | 239M | 8192 | 768 |
 | `jinaai/jina-embeddings-v5-text-small-retrieval` | 677M | 8192 | 1024 |
 
-> **Note:** Jina v5 bare names are automatically resolved to the `-retrieval` variant.
+> [!NOTE]
+> Jina v5 bare names are automatically resolved to the `-retrieval` variant.
 
 **4. Qwen3 Embedding Series** [[6]](#ref-6)[[7]](#ref-7)[[10]](#ref-10)
 
@@ -681,7 +703,8 @@ Uses LangChain's **`RecursiveCharacterTextSplitter`** with a Nepali-aware separa
 - **Dense vector storage**: Each chunk is stored with a **dense vector** (Cosine vector corresponding to the output dimension of the embedding model).
 - **Library**: `qdrant-client`.
 
-> **P.S.** Current setup(except MCP) only supports *Qdrant Cloud*. For local/docker Qdrant setups use
+> [!IMPORTANT]
+> Current setup (except MCP) only supports *Qdrant Cloud*. For local/docker Qdrant setups use:
 
 ```bash
 from nepali_rag import QdrantStore
@@ -788,7 +811,55 @@ load_document() → normalize_text() → chunk_pages() → embed_documents() →
 
 All settings are managed through **pydantic-settings** (`BaseSettings`), loaded from environment variables or a `.env` file. This provides type validation, defaults, and a single source of truth for the entire system.
 
-## 14. References
+## 14. Evaluation Results
+
+30 embedding + reranker combinations evaluated across 5 [DeepEval](https://docs.confident-ai.com/docs/metrics-introduction) RAG metrics. Sorted by **Retrieval Avg** (average of Contextual Recall, Precision, and Relevancy).
+
+**Benchmark setup:**
+- **Dataset**: 8 document samples, 10 QnA pairs each (English + Nepali)
+- **RAG LLM**: `gemma3:1b` (Ollama)
+- **Judge LLM**: `Qwen3-235B-A22B-Instruct-2507`
+- **Skipped**: `Qwen3-Embedding-4B` and `Qwen3-Embedding-8B` (hardware limitations)
+
+| Embedding | Reranker | Ans. Relevancy | Faithfulness | Ctx. Recall | Ctx. Precision | Ctx. Relevancy | Retrieval Avg |
+|---|---|---|---|---|---|---|---|
+| **`jina-embeddings-v5-text-nano-retrieval`** | **`bge-reranker-v2-m3`** | **1.000** | 0.892 | **0.988** | 0.886 | 0.393 | **0.756** |
+| `multilingual-e5-base` | `bge-reranker-v2-m3` | 0.985 | 0.908 | 0.975 | **0.929** | 0.355 | 0.753 |
+| `multilingual-e5-large-instruct` | `bge-reranker-v2-m3` | 0.959 | 0.922 | 0.975 | 0.926 | 0.350 | 0.750 |
+| `bge-m3` | `bge-reranker-v2-m3` | 0.962 | 0.942 | 0.975 | 0.928 | 0.328 | 0.744 |
+| `multilingual-e5-small` | `bge-reranker-v2-m3` | 0.969 | 0.941 | 0.975 | 0.922 | 0.330 | 0.742 |
+| `gte-multilingual-base` | `bge-reranker-v2-m3` | 0.977 | 0.971 | 0.975 | 0.931 | 0.318 | 0.741 |
+| `jina-embeddings-v3` | `bge-reranker-v2-m3` | 0.973 | 0.933 | 0.975 | 0.919 | 0.329 | 0.741 |
+| `multilingual-e5-large` | `bge-reranker-v2-m3` | 0.965 | 0.941 | 0.975 | 0.917 | 0.328 | 0.740 |
+| `jina-embeddings-v5-text-small-retrieval` | `bge-reranker-v2-m3` | 0.954 | 0.919 | 0.906 | 0.816 | 0.433 | 0.718 |
+| `multilingual-e5-large` | `Qwen3-Reranker-0.6B` | 0.973 | 0.947 | 0.950 | 0.820 | 0.335 | 0.702 |
+| `multilingual-e5-small` | `Qwen3-Reranker-0.6B` | 0.984 | 0.929 | 0.963 | 0.824 | 0.316 | 0.701 |
+| `multilingual-e5-base` | `Qwen3-Reranker-0.6B` | 0.974 | 0.947 | 0.956 | 0.823 | 0.312 | 0.697 |
+| `gte-multilingual-base` | `Qwen3-Reranker-0.6B` | 0.970 | 0.940 | 0.963 | 0.819 | 0.308 | 0.697 |
+| `multilingual-e5-large-instruct` | `Qwen3-Reranker-0.6B` | 0.989 | 0.959 | 0.963 | 0.805 | 0.321 | 0.696 |
+| `qwen3-embedding-0.6b` | `bge-reranker-v2-m3` | 0.982 | 0.964 | 0.881 | 0.780 | 0.423 | 0.695 |
+| `jina-embeddings-v5-text-nano-retrieval` | `Qwen3-Reranker-0.6B` | 0.973 | 0.919 | 0.898 | 0.790 | 0.385 | 0.691 |
+| `jina-embeddings-v3` | `Qwen3-Reranker-0.6B` | 0.956 | 0.963 | 0.950 | 0.804 | 0.319 | 0.691 |
+| `bge-m3` | `Qwen3-Reranker-0.6B` | 0.970 | 0.959 | 0.950 | 0.797 | 0.314 | 0.687 |
+| `multilingual-e5-large` | `bge-reranker-v2-gemma` | 0.925 | 0.884 | 0.875 | 0.757 | 0.304 | 0.645 |
+| `qwen3-embedding-0.6b` | `Qwen3-Reranker-0.6B` | 0.968 | 0.959 | 0.806 | 0.737 | 0.375 | 0.640 |
+| `multilingual-e5-large-instruct` | `bge-reranker-v2-gemma` | 0.950 | 0.942 | 0.887 | 0.723 | 0.283 | 0.631 |
+| `jina-embeddings-v5-text-small-retrieval` | `Qwen3-Reranker-0.6B` | 0.939 | 0.948 | 0.813 | 0.689 | 0.389 | 0.630 |
+| `multilingual-e5-base` | `bge-reranker-v2-gemma` | 0.946 | 0.953 | 0.888 | 0.707 | 0.286 | 0.627 |
+| `gte-multilingual-base` | `bge-reranker-v2-gemma` | 0.963 | 0.933 | 0.900 | 0.692 | 0.285 | 0.625 |
+| `jina-embeddings-v3` | `bge-reranker-v2-gemma` | 0.923 | 0.896 | 0.850 | 0.732 | 0.269 | 0.617 |
+| `multilingual-e5-small` | `bge-reranker-v2-gemma` | 0.943 | 0.932 | 0.862 | 0.700 | 0.273 | 0.612 |
+| `jina-embeddings-v5-text-nano-retrieval` | `bge-reranker-v2-gemma` | 0.934 | 0.932 | 0.860 | 0.604 | 0.328 | 0.597 |
+| `jina-embeddings-v5-text-small-retrieval` | `bge-reranker-v2-gemma` | 0.936 | **0.983** | 0.819 | 0.591 | 0.342 | 0.584 |
+| `qwen3-embedding-0.6b` | `bge-reranker-v2-gemma` | 0.935 | 0.968 | 0.742 | 0.576 | 0.307 | 0.542 |
+| `bge-m3` | `bge-reranker-v2-gemma` | 0.953 | 0.963 | 0.738 | 0.500 | 0.253 | 0.497 |
+
+> [!TIP]
+> **Best per metric:** Ans. Relevancy: `jina-v5-nano` + `bge-m3` (1.000) | Faithfulness: `jina-v5-small` + `bge-gemma` (0.983) | Ctx. Recall: `jina-v5-nano` + `bge-m3` (0.988) | Ctx. Precision: `gte-multilingual-base` + `bge-m3` (0.931) | Ctx. Relevancy: `jina-v5-small` + `bge-m3` (**0.433**)
+
+For evaluation methodology and how to run your own benchmarks, see [Evaluation Documentation](./nepali_rag/evals/README.md).
+
+## 15. References
 
 <a id="ref-1"></a> 1. Limbu Begha, F., Acharya, P., & Bal, B. K. (2026). *Nepali Passport Question Answering: A Low-Resource Dataset for Public Service Applications*. arXiv:2603.13320. [https://arxiv.org/html/2603.13320v1](https://arxiv.org/html/2603.13320v1)
 
@@ -810,6 +881,6 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 
 <a id="ref-10"></a> 10. Mohr, I. et al. (2025). *Task-Targeted Embedding Distillation for Multi-Task Retrieval*. arXiv:2602.15547. [https://arxiv.org/html/2602.15547v1](https://arxiv.org/html/2602.15547v1)
 
-## 15. License
+## 16. License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

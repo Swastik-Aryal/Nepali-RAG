@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from nepali_rag.preprocessing.normalizer import normalize_text, is_nepali_text
     from nepali_rag.ingestion.loader import load_document
     from nepali_rag.config.settings import settings
+    from nepali_rag.evals.rag_output_generator import run_rag
+    from nepali_rag.evals.evaluator import run_evaluation
 
 _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "DocumentPipeline": ("nepali_rag.pipeline.document_pipeline", "DocumentPipeline"),
@@ -30,6 +32,8 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "is_nepali_text": ("nepali_rag.preprocessing.normalizer", "is_nepali_text"),
     "load_document": ("nepali_rag.ingestion.loader", "load_document"),
     "settings": ("nepali_rag.config.settings", "settings"),
+    "run_rag": ("nepali_rag.evals.rag_output_generator", "run_rag"),
+    "run_evaluation": ("nepali_rag.evals.evaluator", "run_evaluation"),
 }
 
 

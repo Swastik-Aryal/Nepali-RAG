@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     sample_docs_dir: Path = Path("data/sample_docs")
 
+    eval_provider: str = ""
+    eval_model: str = ""
+    eval_api_key: str = ""
+    eval_base_url: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
