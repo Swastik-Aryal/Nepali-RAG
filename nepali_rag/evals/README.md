@@ -340,4 +340,14 @@ Sorted by **Retrieval Avg** (average of Contextual Recall, Precision, and Releva
 
 > **Best per metric**: Ans. Relevancy: `jina-v5-nano` + `bge-m3` (1.000) | Faithfulness: `jina-v5-small` + `bge-gemma` (0.983) | Ctx. Recall: `jina-v5-nano` + `bge-m3` (0.988) | Ctx. Precision: `gte-multilingual-base` + `bge-m3` (0.931) | Ctx. Relevancy: `jina-v5-small` + `bge-m3` (**0.433**)
 
+## Replicating Results
+
+The evaluation dataset and pre-computed result JSONs are bundled in [`nepali_rag/data/evaluation_tests/`](./../../nepali_rag/data/evaluation_tests/). To replicate the benchmark results below, point the eval command at that directory:
+
+```bash
+nepali-rag eval-score nepali_rag/data/evaluation_tests/eval_dataset
+```
+
+Pre-computed scores are in [`nepali_rag/data/evaluation_tests/eval_results`](./../../nepali_rag/data/evaluation_tests/eval_results)
+
 

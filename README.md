@@ -324,7 +324,7 @@ The API will be available at `http://localhost:8080`. Interactive docs at `http:
 > [!NOTE]
 > The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
 
-Full API server documentation here: [API SERVER DOCUMENATION](./nepali_rag/api/README.md)
+Full API server documentation here: [API SERVER DOCUMENTATION](./nepali_rag/api/README.md)
 
 ## 5. MCP Server
 
@@ -344,7 +344,7 @@ nepali-rag mcp
 - **`ingest_document`** - Ingest one or more document files into a Qdrant collection for retrieval.
 - **`retrieve`** - Search a Qdrant collection and return reranked results.
 
-Full documentation including input/output schemas, storage guide, and configuration examples for all supported clients here: [MCP SERVER DOCUMENATION](./nepali_rag/mcp/README.md)
+Full documentation including input/output schemas, storage guide, and configuration examples for all supported clients here: [MCP SERVER DOCUMENTATION](./nepali_rag/mcp/README.md)
 
 ## 6. Configuration
 
@@ -422,7 +422,7 @@ nepali-rag mcp
     -v                        enable debug logging
 
 ```
-For evalution guide visit [Evaluation Documentation](./nepali_rag/evals/README.md).
+For evaluation guide visit [Evaluation Documentation](./nepali_rag/evals/README.md).
 ## 8. Supported Document Formats
 
 | Format                    | Extensions          | Method                     |
@@ -565,8 +565,12 @@ nepali-rag/
 │   ├── rag/                     # RAG chain (always-retrieve + tool-calling)
 │   ├── llm/                     # Multi-provider LLM factory
 │   ├── pipeline/                # Full document ingestion orchestrator
+│   ├── evals/                   # Evaluation config, scripts
 │   ├── mcp/                     # MCP server (streamable-http transport, 2 tools)
 │   │   └── server.py            # Tool definitions, model lifecycle, entry point
+│   ├── data/                    # Test data and results
+│   │   ├── chunking_tests/      # Documents and result JSONs for chunking tests
+│   │   └── evaluation_tests/    # Eval dataset and eval result JSONs
 │   └── api/                     # FastAPI HTTP layer
 │       ├── main.py              # App setup, lifespan, CORS
 │       ├── routes.py            # Upload, query, health, collection endpoints
@@ -587,7 +591,7 @@ nepali-rag/
 
 ### ii. Document Ingestion (`nepali_rag/ingestion/`)
 
-Handles loading and text extraction from 11+ document formats. PDFs are rendered page-by-page to 300 DPI images using **PyMuPDF** (`fitz`) and processed through **Tesseract OCR** with Nepali (`nep`) language data. Other formats use dedicated parsers:
+Handles loading and text extraction from 9 document formats. PDFs are rendered page-by-page to 300 DPI images using **PyMuPDF** (`fitz`) and processed through **Tesseract OCR** with Nepali (`nep`) language data. Other formats use dedicated parsers:
 
 | Library                                   | Formats                      |
 | ----------------------------------------- | ---------------------------- |
@@ -624,6 +628,7 @@ Uses LangChain's **`RecursiveCharacterTextSplitter`** with a Nepali-aware separa
 - **Overlap**: a configurable percentage of `chunk_size` (default **15%**, via `OVERLAP_RATIO`) is repeated between consecutive chunks to preserve context across boundaries. Every chunk carrying overlap from its predecessor is flagged via `has_overlap`.
 - **Multi-page chunks**: `page_number` metadata joins pages with `&` (e.g., `"3&4"`) when a chunk spans pages.
 - **Chunk metadata**: each chunk carries `source`, `page_number`, `chunk_index`, `token_count`, and `has_overlap`.
+- **Test data**: Sample documents and chunking results obtained during testing JSONs are in [`nepali_rag/data/chunking_tests/`](./nepali_rag/data/chunking_tests/).
 
 ---
 

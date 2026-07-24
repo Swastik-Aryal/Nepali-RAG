@@ -1,0 +1,262 @@
+{
+  "alibaba-nlp/gte-multilingual-base": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 0.9166666666666667,
+      "contextual_recall_score": 0.8,
+      "contextual_precision_score": 0.6666666666666666,
+      "contextual_relevancy_score": 0.3250924369747899,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.96,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.865,
+      "contextual_relevancy_score": 0.2278413980502081,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.96,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7611111111111111,
+      "contextual_relevancy_score": 0.24150806308701048,
+      "num_questions": 10
+    }
+  },
+  "BAAI/bge-m3": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 0.9,
+      "contextual_recall_score": 0.7,
+      "contextual_precision_score": 0.49000000000000005,
+      "contextual_relevancy_score": 0.3062666916846484,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.9666666666666668,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7983333333333333,
+      "contextual_relevancy_score": 0.281307701070859,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.95,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7501388888888889,
+      "contextual_relevancy_score": 0.2958896694382628,
+      "num_questions": 10
+    }
+  },
+  "intfloat/multilingual-e5-base": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 0.9800000000000001,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.6616666666666666,
+      "contextual_relevancy_score": 0.35025570834394365,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.9800000000000001,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.8983333333333334,
+      "contextual_relevancy_score": 0.30826845012522763,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.95,
+      "faithfulness_score": 0.95,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7577777777777778,
+      "contextual_relevancy_score": 0.24320480445480444,
+      "num_questions": 10
+    }
+  },
+  "intfloat/multilingual-e5-large": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 0.8800000000000001,
+      "faithfulness_score": 0.9,
+      "contextual_recall_score": 0.8,
+      "contextual_precision_score": 0.6199999999999999,
+      "contextual_relevancy_score": 0.29149139560130266,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7983333333333333,
+      "contextual_relevancy_score": 0.2801028138528139,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.975,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.741111111111111,
+      "contextual_relevancy_score": 0.32050058275058274,
+      "num_questions": 10
+    }
+  },
+  "intfloat/multilingual-e5-large-instruct": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.8,
+      "contextual_precision_score": 0.6233333333333333,
+      "contextual_relevancy_score": 0.2698356687172477,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.9633333333333333,
+      "faithfulness_score": 0.9,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7983333333333333,
+      "contextual_relevancy_score": 0.3916009250971085,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.6988888888888889,
+      "contextual_relevancy_score": 0.22588526798279124,
+      "num_questions": 10
+    }
+  },
+  "intfloat/multilingual-e5-small": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 0.9166666666666667,
+      "contextual_recall_score": 0.8,
+      "contextual_precision_score": 0.7555555555555555,
+      "contextual_relevancy_score": 0.30980769230769234,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.9400000000000001,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.8983333333333334,
+      "contextual_relevancy_score": 0.29132805461365835,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 0.9666666666666668,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.76,
+      "contextual_relevancy_score": 0.26399701176016965,
+      "num_questions": 10
+    }
+  },
+  "jinaai/jina-embeddings-v3": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 0.8666666666666668,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.7,
+      "contextual_precision_score": 0.6699999999999999,
+      "contextual_relevancy_score": 0.2618986568986569,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.9666666666666668,
+      "faithfulness_score": 0.85,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7683333333333333,
+      "contextual_relevancy_score": 0.32633595229520523,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.8833333333333334,
+      "faithfulness_score": 0.9,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7611111111111111,
+      "contextual_relevancy_score": 0.27326492561147286,
+      "num_questions": 10
+    }
+  },
+  "jinaai/jina-embeddings-v5-text-nano-retrieval": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 0.7583333333333333,
+      "faithfulness_score": 0.9333333333333332,
+      "contextual_recall_score": 0.8,
+      "contextual_precision_score": 0.52,
+      "contextual_relevancy_score": 0.22883227883227883,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 1.0,
+      "faithfulness_score": 0.9,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.8866666666666667,
+      "contextual_relevancy_score": 0.29087537462537466,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.9333333333333333,
+      "faithfulness_score": 0.8,
+      "contextual_recall_score": 0.7833333333333333,
+      "contextual_precision_score": 0.6916666666666667,
+      "contextual_relevancy_score": 0.22075894865368553,
+      "num_questions": 10
+    }
+  },
+  "jinaai/jina-embeddings-v5-text-small-retrieval": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 0.925,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.5,
+      "contextual_precision_score": 0.4,
+      "contextual_relevancy_score": 0.11952380952380955,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.95,
+      "faithfulness_score": 0.85,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7616666666666667,
+      "contextual_relevancy_score": 0.3394047619047619,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.9333333333333333,
+      "faithfulness_score": 0.8666666666666668,
+      "contextual_recall_score": 0.85,
+      "contextual_precision_score": 0.6405555555555555,
+      "contextual_relevancy_score": 0.3336904761904761,
+      "num_questions": 10
+    }
+  },
+  "qwen/qwen3-embedding-0.6b": {
+    "BAAI/bge-reranker-v2-gemma": {
+      "answer_relevancy_score": 0.9400000000000001,
+      "faithfulness_score": 1.0,
+      "contextual_recall_score": 0.4,
+      "contextual_precision_score": 0.37,
+      "contextual_relevancy_score": 0.09999999999999999,
+      "num_questions": 10
+    },
+    "BAAI/bge-reranker-v2-m3": {
+      "answer_relevancy_score": 0.9266666666666665,
+      "faithfulness_score": 0.9666666666666668,
+      "contextual_recall_score": 0.9,
+      "contextual_precision_score": 0.7088888888888889,
+      "contextual_relevancy_score": 0.2554365079365079,
+      "num_questions": 10
+    },
+    "Qwen/Qwen3-Reranker-0.6B": {
+      "answer_relevancy_score": 0.95,
+      "faithfulness_score": 0.95,
+      "contextual_recall_score": 0.85,
+      "contextual_precision_score": 0.6488888888888888,
+      "contextual_relevancy_score": 0.3089285714285714,
+      "num_questions": 10
+    }
+  }
+}
