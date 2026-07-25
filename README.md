@@ -5,7 +5,7 @@
 ## Features
 
 - **✦ Devanagari-native pipeline**: Unicode NFC normalization, Nepali sentence splitting and Devanagari script-aware chunking built in.
-- **Evaluations**: All embedding + reranker combinations [evaluated](#evaluation-highlights) across 5 RAG metrics on Nepali and English QnA pairs. [Full results](#14-evaluation-results) | [Evaluation docs](./nepali_rag/evals/README.md)
+- **Evaluations**: All embedding + reranker combinations [evaluated](#evaluation-highlights) across 5 RAG metrics on Nepali and English QnA pairs. [Full results](#14-evaluation-results) | [Evaluation docs](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md)
 - **Hybrid retrieval + reranking**: Dense + Sparse (BM25) fused via Reciprocal Rank Fusion, then cross-encoder reranked for precision.
 - **LLM tool-calling mode**: The model autonomously decides when document retrieval is needed; greetings, follow-ups, and translations skip the vector store entirely.
 - **Any LLM provider, one interface**: Ollama, vLLM, OpenAI, Gemini, Anthropic, Hugging Face, plus any OpenAI-compatible API (Groq, DeepSeek, Together, etc.).
@@ -25,7 +25,7 @@
 | 4 | `bge-m3` | `bge-reranker-v2-m3` | 0.962 | 0.942 | 0.975 | 0.928 | 0.328 | 0.744 |
 | 5 | `multilingual-e5-small` | `bge-reranker-v2-m3` | 0.969 | 0.941 | 0.975 | 0.922 | 0.330 | 0.742 |
 
-For the full combination results, see [Evaluation Results](#14-evaluation-results). For methodology and running your own evaluations, see [Evaluation Documentation](./nepali_rag/evals/README.md).
+For the full combination results, see [Evaluation Results](#14-evaluation-results). For methodology and running your own evaluations, see [Evaluation Documentation](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md).
 
 ## Contents
 
@@ -115,7 +115,7 @@ QDRANT_API_KEY=your-qdrant-api-key
 ```
 
 > [!NOTE]
-> If `.env` file is absent, the library will use the default values set in [config/settings.py](./nepali_rag/config/settings.py) (also viewable in `.env.example`).
+> If `.env` file is absent, the library will use the default values set in [config/settings.py](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/config/settings.py) (also viewable in `.env.example`).
 
 > [!NOTE]
 > The `.env` file is **not required** for CLI usage. All parameters are passed directly as command-line arguments.
@@ -324,7 +324,7 @@ The API will be available at `http://localhost:8080`. Interactive docs at `http:
 > [!NOTE]
 > The API server reads configuration from a `.env` file (Qdrant credentials, LLM provider, etc.). Use `--env-file` to specify the path if it's not in your current directory.
 
-Full API server documentation here: [API SERVER DOCUMENTATION](./nepali_rag/api/README.md)
+Full API server documentation here: [API SERVER DOCUMENTATION](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/api/README.md)
 
 ## 5. MCP Server
 
@@ -344,11 +344,11 @@ nepali-rag mcp
 - **`ingest_document`** - Ingest one or more document files into a Qdrant collection for retrieval.
 - **`retrieve`** - Search a Qdrant collection and return reranked results.
 
-Full documentation including input/output schemas, storage guide, and configuration examples for all supported clients here: [MCP SERVER DOCUMENTATION](./nepali_rag/mcp/README.md)
+Full documentation including input/output schemas, storage guide, and configuration examples for all supported clients here: [MCP SERVER DOCUMENTATION](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/mcp/README.md)
 
 ## 6. Configuration
 
-Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can be overridden/managed through a `.env` file. See [`.env.example`](.env.example) for the full list.
+Default settings in [config/settings.py](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/config/settings.py). Can be overridden/managed through a `.env` file. See [`.env.example`](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/.env.example) for the full list.
 
 | Setting                 | Default                              | Purpose                                                                         |
 | ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
@@ -425,7 +425,7 @@ nepali-rag mcp
 
 > [!TIP]
 > Qdrant credentials (`--qdrant-url`, `--qdrant-api-key`) and LLM credentials (`--api-key`, `--llm-base-url`) all fall back to environment variables when not passed as flags. Export `QDRANT_URL`, `QDRANT_API_KEY`, `LLM_API_KEY`, and `LLM_BASE_URL` in your shell to avoid repeating them on every command.
-For evaluation guide visit [Evaluation Documentation](./nepali_rag/evals/README.md).
+For evaluation guide visit [Evaluation Documentation](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md).
 ## 8. Supported Document Formats
 
 | Format                    | Extensions          | Method                     |
@@ -590,7 +590,7 @@ nepali-rag/
 
 ### i. Architecture
 
-![architecture](./nepali_rag/data/architecture/architecture.svg)
+![architecture](https://raw.githubusercontent.com/Swastik-Aryal/Nepali-RAG/main/nepali_rag/data/architecture/architecture.svg)
 
 ### ii. Document Ingestion (`nepali_rag/ingestion/`)
 
@@ -631,7 +631,7 @@ Uses LangChain's **`RecursiveCharacterTextSplitter`** with a Nepali-aware separa
 - **Overlap**: a configurable percentage of `chunk_size` (default **15%**, via `OVERLAP_RATIO`) is repeated between consecutive chunks to preserve context across boundaries. Every chunk carrying overlap from its predecessor is flagged via `has_overlap`.
 - **Multi-page chunks**: `page_number` metadata joins pages with `&` (e.g., `"3&4"`) when a chunk spans pages.
 - **Chunk metadata**: each chunk carries `source`, `page_number`, `chunk_index`, `token_count`, and `has_overlap`.
-- **Test data**: Sample documents and chunking results obtained during testing JSONs are in [`nepali_rag/data/chunking_tests/`](./nepali_rag/data/chunking_tests/).
+- **Test data**: Sample documents and chunking results obtained during testing JSONs are in [`nepali_rag/data/chunking_tests/`](https://github.com/Swastik-Aryal/Nepali-RAG/tree/main/nepali_rag/data/chunking_tests/).
 
 ---
 
@@ -865,7 +865,7 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 > [!TIP]
 > **Best per metric:** Ans. Relevancy: `jina-v5-nano` + `bge-m3` (1.000) | Faithfulness: `jina-v5-small` + `bge-gemma` (0.983) | Ctx. Recall: `jina-v5-nano` + `bge-m3` (0.988) | Ctx. Precision: `gte-multilingual-base` + `bge-m3` (0.931) | Ctx. Relevancy: `jina-v5-small` + `bge-m3` (**0.433**)
 
-For evaluation methodology and how to run your own benchmarks, see [Evaluation Documentation](./nepali_rag/evals/README.md).
+For evaluation methodology and how to run your own benchmarks, see [Evaluation Documentation](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md).
 
 ## 15. References
 
@@ -891,4 +891,4 @@ For evaluation methodology and how to run your own benchmarks, see [Evaluation D
 
 ## 16. License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License. See [LICENSE](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/LICENSE) for details.
