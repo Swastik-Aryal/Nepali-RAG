@@ -440,6 +440,9 @@ For evaluation guide visit [Evaluation Documentation](https://github.com/Swastik
 | EPUB                      | `.epub`           | EbookLib                   |
 | OpenDocument              | `.odt`            | odfpy                      |
 
+> [!IMPORTANT]
+> **PDF OCR is optimized for Nepali (Devanagari) text only.** The OCR pipeline uses Tesseract with `nep` trained data. English-only or primarily English PDFs will produce garbled or incorrect characters. For English content, use non-PDF formats (`.docx`, `.txt`, `.md`, etc.) which rely on direct text extraction instead of OCR.
+
 ## 9. LLM Providers
 
 The system supports seven LLM backends through a unified `get_llm()` factory. Switch providers by changing the `LLM_PROVIDER` environment variable or passing `--provider` to the CLI.
