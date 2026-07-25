@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 
 
@@ -20,6 +21,11 @@ def _setup_logging(verbose: bool = False, default_level: int = logging.WARNING):
 def cmd_ingest(args):
     """Ingest one or more documents through the full pipeline."""
     _setup_logging(args.verbose)
+    if not args.qdrant_url:
+        sys.exit("Error: Qdrant URL required. Set QDRANT_URL env var or pass --qdrant-url")
+    if not args.qdrant_api_key:
+        sys.exit("Error: Qdrant API key required. Set QDRANT_API_KEY env var or pass --qdrant-api-key")
+
     from nepali_rag.embeddings.embedding_model import NepaliEmbeddingModel
     from nepali_rag.vectorstore.qdrant_store import QdrantStore
     from nepali_rag.pipeline.document_pipeline import DocumentPipeline
@@ -73,6 +79,11 @@ def _load_history(history_arg: str) -> list[dict] | None:
 def cmd_query(args):
     """Run the full RAG chain and print the answer."""
     _setup_logging(args.verbose)
+    if not args.qdrant_url:
+        sys.exit("Error: Qdrant URL required. Set QDRANT_URL env var or pass --qdrant-url")
+    if not args.qdrant_api_key:
+        sys.exit("Error: Qdrant API key required. Set QDRANT_API_KEY env var or pass --qdrant-api-key")
+
     from nepali_rag.embeddings.embedding_model import NepaliEmbeddingModel
     from nepali_rag.vectorstore.qdrant_store import QdrantStore
     from nepali_rag.retrieval.retriever import Retriever
@@ -199,8 +210,8 @@ def main():
     # ingest 
     p_ingest = subparsers.add_parser("ingest", parents=[common], help="ingest documents into the vector store")
     p_ingest.add_argument("files", nargs="+", help="path(s) to the document file(s)")
-    p_ingest.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
-    p_ingest.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
+    p_ingest.add_argument("--qdrant-url", default=os.environ.get("QDRANT_URL"), help="Qdrant instance URL (default: $QDRANT_URL)")
+    p_ingest.add_argument("--qdrant-api-key", default=os.environ.get("QDRANT_API_KEY"), help="Qdrant API key (default: $QDRANT_API_KEY)")
     p_ingest.add_argument("-c", "--collection", default="nepali_docs", help="target Qdrant collection name (default: nepali_docs)")
     p_ingest.add_argument("--chunk-size", type=int, default=256, help="token chunk size (default: 256)")
     p_ingest.add_argument("--embedding", default="intfloat/multilingual-e5-large", help="embedding model name (default: intfloat/multilingual-e5-large)")
@@ -209,8 +220,8 @@ def main():
     # query 
     p_query = subparsers.add_parser("query", parents=[common], help="query the RAG pipeline")
     p_query.add_argument("question", help="the question to ask")
-    p_query.add_argument("--qdrant-url", required=True, help="Qdrant instance URL (e.g. https://xyz.cloud.qdrant.io)")
-    p_query.add_argument("--qdrant-api-key", required=True, help="Qdrant API key")
+    p_query.add_argument("--qdrant-url", default=os.environ.get("QDRANT_URL"), help="Qdrant instance URL (default: $QDRANT_URL)")
+    p_query.add_argument("--qdrant-api-key", default=os.environ.get("QDRANT_API_KEY"), help="Qdrant API key (default: $QDRANT_API_KEY)")
     p_query.add_argument("-c", "--collection", default="nepali_docs", help="Qdrant collection to search (default: nepali_docs)")
     p_query.add_argument(
         "--provider",
@@ -223,13 +234,13 @@ def main():
     p_query.add_argument("--model", default="gemma4", help="LLM model name (default: gemma4)")
     p_query.add_argument(
         "--api-key",
-        default=None,
-        help="API key for the LLM provider (required for openai, gemini, hf_cloud)",
+        default=os.environ.get("LLM_API_KEY"),
+        help="API key for the LLM provider (default: $LLM_API_KEY)",
     )
     p_query.add_argument(
         "--llm-base-url",
-        default=None,
-        help="base URL for the LLM server (for vllm, ollama, hf_cloud)",
+        default=os.environ.get("LLM_BASE_URL"),
+        help="base URL for the LLM server (for vllm, ollama, hf_cloud) (default: $LLM_BASE_URL)",
     )
     p_query.add_argument("--temperature", type=float, default=0.3, help="LLM temperature (default: 0.3)")
     p_query.add_argument("--top-k", type=int, default=20, help="number of retrieval candidates (default: 20)")

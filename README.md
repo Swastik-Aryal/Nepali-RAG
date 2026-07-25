@@ -385,21 +385,21 @@ Default settings in [config/settings.py](./nepali_rag/config/settings.py). Can b
 
 ```
 nepali-rag ingest <file> [<file> ...]
-    --qdrant-url URL          (required) Qdrant instance URL
-    --qdrant-api-key KEY      (required) Qdrant API key
+    --qdrant-url URL          Qdrant instance URL (default: $QDRANT_URL)
+    --qdrant-api-key KEY      Qdrant API key (default: $QDRANT_API_KEY)
     -c, --collection NAME     collection name (default: nepali_docs)
     --chunk-size N            token chunk size (default: 256)
     --embedding <name>        embedding model (default: intfloat/multilingual-e5-large)
     -v                        enable debug logging
 
 nepali-rag query "<question>"
-    --qdrant-url URL          (required) Qdrant instance URL
-    --qdrant-api-key KEY      (required) Qdrant API key
+    --qdrant-url URL          Qdrant instance URL (default: $QDRANT_URL)
+    --qdrant-api-key KEY      Qdrant API key (default: $QDRANT_API_KEY)
     -c, --collection NAME     collection name (default: nepali_docs)
     --provider PROVIDER       LLM provider (default: ollama)
     --model MODEL             LLM model name (default: gemma4)
-    --api-key KEY             API key for LLM provider (required for openai, gemini, hf_cloud)
-    --llm-base-url URL        base URL for LLM server (for vllm, openai, ollama, hf_cloud)
+    --api-key KEY             API key for LLM provider (default: $LLM_API_KEY)
+    --llm-base-url URL        base URL for LLM server (default: $LLM_BASE_URL)
     --temperature FLOAT       LLM temperature (default: 0.3)
     --top-k N                 retrieval candidates (default: 20)
     --top-r N                 rerank candidates (default: 5)
@@ -422,6 +422,9 @@ nepali-rag mcp
     -v                        enable debug logging
 
 ```
+
+> [!TIP]
+> Qdrant credentials (`--qdrant-url`, `--qdrant-api-key`) and LLM credentials (`--api-key`, `--llm-base-url`) all fall back to environment variables when not passed as flags. Export `QDRANT_URL`, `QDRANT_API_KEY`, `LLM_API_KEY`, and `LLM_BASE_URL` in your shell to avoid repeating them on every command.
 For evaluation guide visit [Evaluation Documentation](./nepali_rag/evals/README.md).
 ## 8. Supported Document Formats
 
