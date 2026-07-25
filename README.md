@@ -1,6 +1,6 @@
 # Nepali-RAG
 
-**Production-ready Retrieval-Augmented Generation framework purpose-built for the Nepali language, integratable into any LLM environment.**
+**The all-in-one Retrieval-Augmented Generation framework purpose-built for the Nepali documents, integratable into any LLM environment.**
 
 ## Features
 

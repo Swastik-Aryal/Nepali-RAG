@@ -230,6 +230,7 @@ def run_evaluation(
             emb_slug, rrk_slug = parsed
 
             if emb_slug not in emb_slug_map or rrk_slug not in rrk_slug_map:
+                logger.warning("Skipping %s / %s in %s (model not found)", emb_slug, rrk_slug, dp_dir.name)
                 continue
 
             emb_name = emb_slug_map[emb_slug]

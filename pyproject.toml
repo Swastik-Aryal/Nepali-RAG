@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nepali-rag"
-version = "1.0.0"
-description = "Retrieval-Augmented Generation system with deep Nepali language support"
+version = "0.1.0"
+description = "All-in-one RAG framework for Nepali Documents."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -38,40 +38,40 @@ classifiers = [
 
 dependencies = [
     # Document parsing
-    "PyMuPDF>=1.24.0",
-    "pytesseract>=0.3.10",
-    "Pillow>=10.0.0",
-    "python-docx>=1.1.0",
-    "python-pptx>=0.6.23",
-    "openpyxl>=3.1.0",
-    "striprtf>=0.0.26",
-    "beautifulsoup4>=4.12.0",
-    "EbookLib>=0.18",
-    "odfpy>=1.4.0",
+    "PyMuPDF>=1.27.1",
+    "pytesseract>=0.3.13",
+    "Pillow>=11.1.0",
+    "python-docx>=1.2.0",
+    "python-pptx>=1.0.2",
+    "openpyxl>=3.1.5",
+    "striprtf>=0.0.32",
+    "beautifulsoup4>=4.13.3",
+    "EbookLib>=0.20",
+    "odfpy>=1.4.1",
 
     # Configuration
-    "pydantic>=2.0.0",
-    "pydantic-settings>=2.0.0",
-    "python-dotenv>=1.0.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.10.1",
+    "python-dotenv>=1.2.2",
 
     # LangChain
-    "langchain-core>=0.3.0",
-    "langchain-text-splitters>=0.3.0",
-    "langchain-openai>=0.3.0",
-    "langchain-google-genai>=2.0.0",
-    "langchain-ollama>=0.3.0",
-    "langchain-anthropic>=0.3.0",
-    "langchain-huggingface>=0.3.0",
+    "langchain-core>=1.4.9",
+    "langchain-text-splitters>=1.1.2",
+    "langchain-openai>=1.3.5",
+    "langchain-google-genai>=4.2.7",
+    "langchain-ollama>=0.3.10",
+    "langchain-anthropic>=1.4.8",
+    "langchain-huggingface>=1.2.2",
 
     # Embeddings and reranking
-    "sentence-transformers>=3.0.0",
-    "transformers>=4.40.0",
-    "numpy>=1.26.0",
-    "torch>=2.0.0",
+    "sentence-transformers>=5.5.1",
+    "transformers>=4.57.6",
+    "numpy>=2.4.6",
+    "torch>=2.12.1",
 
     # Vector store
-    "qdrant-client>=1.9.0",
-    "bm25s>=0.2.0",
+    "qdrant-client>=1.18.0",
+    "bm25s>=0.3.9",
 
     # API
     "fastapi>=0.127.0,<0.129.1",
@@ -79,7 +79,7 @@ dependencies = [
     "python-multipart>=0.0.20",
 
     # LLM providers
-    "openai>=1.0.0",
+    "openai>=2.45.0",
 
     # MCP server
     "mcp[cli]>=1.25.0",
@@ -87,17 +87,18 @@ dependencies = [
 
 [project.optional-dependencies]
 evals = [
-    "deepeval>=2.0.0",
+    "deepeval>=4.1.0",
 ]
 dev = [
-    "pytest>=8.0.0",
-    "ruff>=0.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.11.10",
 ]
 
 [project.urls]
 Homepage = "https://github.com/Swastik-Aryal/Nepali-RAG"
 Repository = "https://github.com/Swastik-Aryal/Nepali-RAG"
 Issues = "https://github.com/Swastik-Aryal/Nepali-RAG/issues"
+Documentation = "https://github.com/Swastik-Aryal/Nepali-RAG"
 
 [project.scripts]
 nepali-rag = "cli:main"
@@ -111,7 +112,6 @@ exclude = ["nepali_rag.data*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.txt", "*.md"]
-nepali_rag = ["py.typed", "*.pyi"]
 
 [tool.ruff]
 target-version = "py310"

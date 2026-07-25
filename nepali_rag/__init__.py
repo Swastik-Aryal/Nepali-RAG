@@ -1,8 +1,8 @@
-"""Nepali RAG — Retrieval-Augmented Generation for Nepali language documents."""
+"""Nepali-RAG: All-in-one RAG framework for Nepali Documents."""
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 
 from typing import TYPE_CHECKING
 

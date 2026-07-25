@@ -109,11 +109,11 @@ def build_model(
 
     if not provider:
         raise ValueError(
-            "No eval provider configured. Set EVAL_PROVIDER env var or pass provider= to build_model()."
+            "No eval provider configured. Set EVAL_PROVIDER env var."
         )
     if not model_name:
         raise ValueError(
-            "No eval model configured. Set EVAL_MODEL env var or pass model_name= to build_model()."
+            "No eval model configured. Set EVAL_MODEL env var."
         )
 
     if provider == "openai":
