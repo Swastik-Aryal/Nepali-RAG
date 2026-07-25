@@ -154,8 +154,7 @@ async def ingest_document(
     qdrant_api_key: str | None = None,
     chunk_size: int = 256
 ) -> dict:
-    """Ingest one or more Nepali language documents into a Qdrant collection for retrival later on.
-    IMPORTANT: This MCP server runs locally on the user's machine.
+    """Ingest Nepali documents from local filesystem paths (not uploads) into a Qdrant collection for retrieval.
     file_paths are local filesystem paths that this server accesses directly.
     Do NOT ask the user to upload files — pass the path as-is to this tool.
     Example: "C:/Users/Acer/Desktop/xyz/test.pdf" is a valid file_paths entry.
@@ -202,6 +201,7 @@ async def ingest_document(
             _do_ingest, store, embedding_model, file_paths, chunk_size
         )
         total_indexed = sum(r["chunks_indexed"] for r in results)
+        logger.info(f"Embedding Model: {embedding_model.model_name}")
         return {
             "collection_name": collection_name,
             "qdrant_path": qdrant_path,
