@@ -81,31 +81,21 @@ For the full combination results, see [Evaluation Results](#14-evaluation-result
 ## 2. Installation
 
 ```bash
-git clone https://github.com/Swastik-Aryal/Nepali-RAG.git
-cd Nepali-RAG
-pip install -e . --config-settings editable_mode=compat
+pip install nepali-rag
 ```
 
 This installs all dependencies (document parsers, embeddings, vector store, LLM providers, API server).
 
 > [!TIP]
-> **GPU acceleration:** The default install pulls CPU-only PyTorch. If you have an NVIDIA GPU, install the CUDA build **before or after** `pip install -e .`:
+> **GPU acceleration:** The default install pulls CPU-only PyTorch. If you have an NVIDIA GPU, install the CUDA build **before or after** the installation:
 
 ```bash
 # Example for CUDA 12.1 (check your version with: nvidia-smi)
 pip install torch --index-url https://download.pytorch.org/whl/cu121
 ```
-
 ### Environment File (Optional but Recommended)
-
-For the Python usage (less control snippets), the library reads settings from a `.env` file. Copy the template:
-
-```bash
-cp .env.example .env
-```
-
 > [!IMPORTANT]
-> For Python scripts, the `.env` file is loaded from your **current working directory** (CWD). For the API server, you can point to any `.env` file with `nepali-rag serve --env-file /path/to/.env`.
+> For the Python usage (less control snippets), the library reads settings from a `.env` file in your **current working directory** (CWD). Copy the template from **[.env.example](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/.env.example)**
 
 At minimum, set your Qdrant connection:
 
@@ -117,8 +107,6 @@ QDRANT_API_KEY=your-qdrant-api-key
 > [!NOTE]
 > If `.env` file is absent, the library will use the default values set in [config/settings.py](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/config/settings.py) (also viewable in `.env.example`).
 
-> [!NOTE]
-> The `.env` file is **not required** for CLI usage. All parameters are passed directly as command-line arguments.
 
 ## 3. Quick Start
 
@@ -425,7 +413,10 @@ nepali-rag mcp
 
 > [!TIP]
 > Qdrant credentials (`--qdrant-url`, `--qdrant-api-key`) and LLM credentials (`--api-key`, `--llm-base-url`) all fall back to environment variables when not passed as flags. Export `QDRANT_URL`, `QDRANT_API_KEY`, `LLM_API_KEY`, and `LLM_BASE_URL` in your shell to avoid repeating them on every command.
-For evaluation guide visit [Evaluation Documentation](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md).
+
+>[!Note]
+> For evaluation guide visit [Evaluation Documentation](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md).
+
 ## 8. Supported Document Formats
 
 | Format                    | Extensions          | Method                     |
@@ -826,7 +817,10 @@ All settings are managed through **pydantic-settings** (`BaseSettings`), loaded 
 
 30 embedding + reranker combinations evaluated across 5 [DeepEval](https://docs.confident-ai.com/docs/metrics-introduction) RAG metrics. Sorted by **Retrieval Avg** (average of Contextual Recall, Precision, and Relevancy).
 
-**Benchmark setup:**
+> [!IMPORTANT]
+> These evaluations were done on a randomly sampled general-purpose dataset that you can view **[here](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/data/evaluation_tests)** and may not reflect the performance of the system for all usecases. For more accurate results, evaluations on domain-specific datasets are recommended.
+
+**Benchmark setup:**`
 - **Dataset**: 8 document samples, 10 QnA pairs each (English + Nepali)
 - **RAG LLM**: `gemma4:31b` (Google Gemini API)
 - **Judge LLM**: `Qwen3-235B-A22B-Instruct-2507`

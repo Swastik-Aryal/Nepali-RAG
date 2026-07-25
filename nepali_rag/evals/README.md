@@ -14,9 +14,8 @@ Both steps are incremental: they skip combinations that already have outputs, so
 Install the base package with the `evals` extra to pull in DeepEval:
 
 ```bash
-pip install -e ".[evals]"
+pip install nepali-rag[evals]
 ```
-
 Or add `deepeval` manually:
 
 ```bash
@@ -302,6 +301,9 @@ This module is meant to be edited. Some things you might want to change:
 | **Skipped** | `Qwen3-Embedding-4B`, `Qwen3-Embedding-8B` (hardware limitations) |
 
 ### Results
+
+> [!IMPORTANT]
+> These evaluations were done on a randomly sampled general-purpose dataset that you can view **[here](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/data/evaluation_tests)** and may not reflect the performance of the system for all usecases. For more accurate results, evaluations on domain-specific datasets are recommended.
 
 Sorted by **Retrieval Avg** (average of Contextual Recall, Precision, and Relevancy). These 3 metrics directly measure retrieval quality, which is what the embedding + reranker combination controls. Answer Relevancy and Faithfulness are shown but are more LLM-dependent.
 
