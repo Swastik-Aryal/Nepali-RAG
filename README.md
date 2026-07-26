@@ -20,6 +20,9 @@
 - **MCP server**: Expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code, etc.).
 - **Python library, CLI, or FastAPI server**: Three interfaces, fully configurable via `.env`, code, or CLI flags.
 
+## Example usage with Claude Desktop via MCP
+https://github.com/user-attachments/assets/eb677b1c-8ecd-4470-a71c-2bb462969c96
+
 ## Evaluation Highlights
 
 | Rank | Embedding | Reranker | Ans. Relevancy | Faithfulness | Ctx. Recall | Ctx. Precision | Ctx. Relevancy | Retrieval Avg |
