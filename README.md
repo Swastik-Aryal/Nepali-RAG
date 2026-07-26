@@ -1,4 +1,11 @@
+<div align="center">
+
 # Nepali-RAG
+
+[![PyPI version](https://img.shields.io/pypi/v/nepali-rag?style=for-the-badge&logo=pypi&logoColor=white&label=PyPI&labelColor=1a1a2e&color=ff6b6b)](https://pypi.org/project/nepali-rag/) [![Python](https://img.shields.io/badge/Python-3.10%2B-4ecdc4?style=for-the-badge&logo=python&logoColor=white&labelColor=1a1a2e)](https://www.python.org/) [![License](https://img.shields.io/badge/License-MIT-ffd93d?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e)](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/LICENSE)
+[![Docs](https://img.shields.io/badge/goto-DOCS-a55eea?style=for-the-badge&logo=readthedocs&logoColor=white&labelColor=1a1a2e)](https://github.com/Swastik-Aryal/Nepali-RAG#Documentation)
+
+</div>
 
 **The all-in-one Retrieval-Augmented Generation framework purpose-built for the Nepali documents, integratable into any LLM environment.**
 
@@ -13,8 +20,6 @@
 - **MCP server**: Expose ingestion and retrieval as tools for AI agents (Claude Desktop, Cursor, VS Code, etc.).
 - **Python library, CLI, or FastAPI server**: Three interfaces, fully configurable via `.env`, code, or CLI flags.
 
-**[Jump to docs](#contents)** OR **[Quick start](#3-quick-start)**
-
 ## Evaluation Highlights
 
 | Rank | Embedding | Reranker | Ans. Relevancy | Faithfulness | Ctx. Recall | Ctx. Precision | Ctx. Relevancy | Retrieval Avg |
@@ -27,7 +32,7 @@
 
 For the full combination results, see [Evaluation Results](#14-evaluation-results). For methodology and running your own evaluations, see [Evaluation Documentation](https://github.com/Swastik-Aryal/Nepali-RAG/blob/main/nepali_rag/evals/README.md).
 
-## Contents
+## Documentation
 
 1. [Prerequisites](#1-prerequisites)
 2. [Installation](#2-installation)

@@ -284,7 +284,6 @@ This module is meant to be edited. Some things you might want to change:
 - **Change the threshold** - pass a different `threshold` to `build_metrics()`.
 - **Add a new judge provider** - add a new branch in `build_model()` in `eval_model.py`. Follow the `AnthropicModel` class as an example for wrapping non-OpenAI-compatible SDKs.
 - **Change RAG settings per-eval** - the generator uses whatever `settings.py` / `.env` values are active. You can set env vars before running to override.
-- **API key rotation** - `rag_output_generator.py` has a `GOOGLE_API_KEYS` list that cycles keys across requests to avoid rate limits. Edit this list or remove the rotation logic if you don't need it.
 
 ## Benchmark Results
 
