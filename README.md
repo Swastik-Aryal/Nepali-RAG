@@ -21,7 +21,8 @@
 - **Python library, CLI, or FastAPI server**: Three interfaces, fully configurable via `.env`, code, or CLI flags.
 
 ## Example usage with Claude Desktop via MCP
-https://github.com/user-attachments/assets/eb677b1c-8ecd-4470-a71c-2bb462969c96
+
+https://github.com/user-attachments/assets/05f4b3fa-622d-45c6-91cb-559c344e957e
 
 ## Evaluation Highlights
 
